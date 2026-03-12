@@ -1,0 +1,209 @@
+{% comment %}
+  Agalaz Virtual Try-On Button
+  Appears on product pages — lets customers try on clothes with AI
+{% endcomment %}
+
+<div id="agalaz-tryon-widget" class="agalaz-widget">
+  <button id="agalaz-tryon-btn" class="agalaz-btn" type="button">
+    👕 {{ block.settings.button_text }}
+  </button>
+
+  <!-- Modal -->
+  <div id="agalaz-modal" class="agalaz-modal" style="display:none;">
+    <div class="agalaz-modal-content">
+      <button id="agalaz-close" class="agalaz-close">&times;</button>
+      <h2 class="agalaz-title">Virtual Try-On</h2>
+      <p class="agalaz-subtitle">Upload your photo to see how this looks on you</p>
+
+      <!-- Step 1: Upload photo -->
+      <div id="agalaz-step1" class="agalaz-step">
+        <div class="agalaz-upload-area" id="agalaz-dropzone">
+          <input type="file" id="agalaz-photo-input" accept="image/*" style="display:none;">
+          <div class="agalaz-upload-icon">📸</div>
+          <p>Tap to upload your photo</p>
+          <p class="agalaz-hint">Full body, front-facing, good lighting</p>
+        </div>
+        <img id="agalaz-preview" class="agalaz-preview" style="display:none;" alt="Your photo">
+        <button id="agalaz-generate-btn" class="agalaz-btn agalaz-btn-primary" style="display:none;">
+          ✨ Try it on!
+        </button>
+      </div>
+
+      <!-- Step 2: Loading -->
+      <div id="agalaz-step2" class="agalaz-step" style="display:none;">
+        <div class="agalaz-loading">
+          <div class="agalaz-spinner"></div>
+          <p>Creating your look...</p>
+        </div>
+      </div>
+
+      <!-- Step 3: Result -->
+      <div id="agalaz-step3" class="agalaz-step" style="display:none;">
+        <img id="agalaz-result" class="agalaz-result-img" alt="Try-on result">
+        <div class="agalaz-actions">
+          <button id="agalaz-retry" class="agalaz-btn">Try another photo</button>
+          <button id="agalaz-add-cart" class="agalaz-btn agalaz-btn-primary">Add to Cart</button>
+        </div>
+        <p id="agalaz-renders-left" class="agalaz-hint"></p>
+      </div>
+
+      <!-- Error -->
+      <div id="agalaz-error" class="agalaz-step" style="display:none;">
+        <p class="agalaz-error-text" id="agalaz-error-msg"></p>
+        <button id="agalaz-error-retry" class="agalaz-btn">Try again</button>
+      </div>
+
+      <p class="agalaz-powered">Powered by <a href="https://agalaz.com" target="_blank">Agalaz</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const PROXY_URL = '/apps/tryon';
+  const productImage = '{{ product.featured_image | image_url: width: 512 }}';
+  const productId = '{{ product.id }}';
+  const variantId = '{{ product.selected_or_first_available_variant.id }}';
+  let userPhoto = null;
+
+  // Elements
+  const btn = document.getElementById('agalaz-tryon-btn');
+  const modal = document.getElementById('agalaz-modal');
+  const closeBtn = document.getElementById('agalaz-close');
+  const dropzone = document.getElementById('agalaz-dropzone');
+  const fileInput = document.getElementById('agalaz-photo-input');
+  const preview = document.getElementById('agalaz-preview');
+  const generateBtn = document.getElementById('agalaz-generate-btn');
+  const step1 = document.getElementById('agalaz-step1');
+  const step2 = document.getElementById('agalaz-step2');
+  const step3 = document.getElementById('agalaz-step3');
+  const errorDiv = document.getElementById('agalaz-error');
+  const resultImg = document.getElementById('agalaz-result');
+  const rendersLeft = document.getElementById('agalaz-renders-left');
+  const retryBtn = document.getElementById('agalaz-retry');
+  const addCartBtn = document.getElementById('agalaz-add-cart');
+  const errorRetry = document.getElementById('agalaz-error-retry');
+  const errorMsg = document.getElementById('agalaz-error-msg');
+
+  function showStep(step) {
+    [step1, step2, step3, errorDiv].forEach(s => s.style.display = 'none');
+    step.style.display = 'block';
+  }
+
+  // Open/Close modal
+  btn.addEventListener('click', () => { modal.style.display = 'flex'; });
+  closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+  // Upload photo
+  dropzone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      userPhoto = ev.target.result.split(',')[1]; // base64
+      preview.src = ev.target.result;
+      preview.style.display = 'block';
+      dropzone.style.display = 'none';
+      generateBtn.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Generate
+  generateBtn.addEventListener('click', async () => {
+    showStep(step2);
+
+    try {
+      // Fetch product image as base64
+      const imgResp = await fetch(productImage);
+      const imgBlob = await imgResp.blob();
+      const clothingBase64 = await new Promise((resolve) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result.split(',')[1]);
+        r.readAsDataURL(imgBlob);
+      });
+
+      const resp = await fetch(PROXY_URL + '/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          faceImage: userPhoto,
+          bodyImage: userPhoto,
+          clothingImage: clothingBase64,
+        }),
+      });
+
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        errorMsg.textContent = data.message || data.error || 'Something went wrong';
+        showStep(errorDiv);
+        return;
+      }
+
+      resultImg.src = 'data:image/png;base64,' + data.image;
+      rendersLeft.textContent = data.rendersRemaining + ' renders remaining';
+      showStep(step3);
+    } catch (err) {
+      errorMsg.textContent = 'Connection error. Please try again.';
+      showStep(errorDiv);
+    }
+  });
+
+  // Retry
+  retryBtn.addEventListener('click', () => {
+    userPhoto = null;
+    preview.style.display = 'none';
+    dropzone.style.display = 'block';
+    generateBtn.style.display = 'none';
+    fileInput.value = '';
+    showStep(step1);
+  });
+
+  errorRetry.addEventListener('click', () => showStep(step1));
+
+  // Add to cart
+  addCartBtn.addEventListener('click', async () => {
+    try {
+      await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: variantId, quantity: 1 }),
+      });
+      window.location.href = '/cart';
+    } catch (err) {
+      alert('Could not add to cart. Please try again.');
+    }
+  });
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Agalaz Try-On",
+  "target": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button text",
+      "default": "Virtual Try-On"
+    },
+    {
+      "type": "color",
+      "id": "button_color",
+      "label": "Button color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Button text color",
+      "default": "#FFFFFF"
+    }
+  ]
+}
+{% endschema %}

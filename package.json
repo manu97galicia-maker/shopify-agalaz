@@ -1,0 +1,18 @@
+{
+  "name": "shopify-agalaz-try-on",
+  "version": "1.0.0",
+  "description": "Agalaz Virtual Try-On - Shopify App. Let your customers try on clothes with AI.",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "keywords": ["shopify", "virtual-try-on", "ai", "fashion"],
+  "author": "Agalaz",
+  "license": "ISC",
+  "dependencies": {
+    "@shopify/app-bridge-react": "^4.2.10",
+    "@shopify/shopify-api": "^13.0.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1"
+  }
+}
