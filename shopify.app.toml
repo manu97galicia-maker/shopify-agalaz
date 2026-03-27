@@ -2,20 +2,20 @@
 
 name = "Agalaz Virtual Try-On"
 client_id = "861f1e9da16336d99ba9d59f77b98807"
-application_url = "https://shopify-agalaz.vercel.app"
+application_url = "https://shopify-agalaz-tryon.vercel.app"
 embedded = true
 
 [access_scopes]
 scopes = "read_products,read_themes,write_themes"
 
 [auth]
-redirect_urls = ["https://shopify-agalaz.vercel.app/api/auth/callback"]
+redirect_urls = ["https://shopify-agalaz-tryon.vercel.app/api/auth/callback"]
 
 [webhooks]
 api_version = "2024-10"
 
 [app_proxy]
-url = "https://shopify-agalaz.vercel.app/api/proxy"
+url = "https://shopify-agalaz-tryon.vercel.app/api/proxy"
 subpath = "tryon"
 prefix = "apps"
 
