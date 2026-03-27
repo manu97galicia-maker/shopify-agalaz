@@ -21,6 +21,11 @@ export async function GET() {
     return NextResponse.json({
       supabase_url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'SET' : 'MISSING',
       service_key: process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING',
+      shopify_key: process.env.SHOPIFY_API_KEY ? 'SET' : 'MISSING',
+      shopify_secret: process.env.SHOPIFY_API_SECRET ? 'SET' : 'MISSING',
+      gemini: process.env.GEMINI_API_KEY ? 'SET' : 'MISSING',
+      stripe: process.env.STRIPE_SECRET_KEY ? 'SET' : 'MISSING',
+      app_url: process.env.NEXT_PUBLIC_APP_URL || process.env.SHOPIFY_APP_URL || 'MISSING',
       test_query: { data: testData, error: testError?.message },
       shop_query: { data: shopData, error: shopError?.message },
     });
