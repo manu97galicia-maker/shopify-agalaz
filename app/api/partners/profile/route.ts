@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     .single();
 
   if (error || !partner) {
-    return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Partner not found', detail: error?.message }, { status: 404 });
   }
 
   return NextResponse.json({
