@@ -1,5 +1,9 @@
+# Agalaz Virtual Try-On — Shopify App Configuration
+
 name = "Agalaz Virtual Try-On"
 client_id = ""
+application_url = "https://your-app.vercel.app"
+embedded = true
 
 [access_scopes]
 scopes = "read_products,read_themes,write_themes"
@@ -20,5 +24,5 @@ embedded = false
 
 [[extensions]]
 type = "theme"
-name = "Agalaz Try-On Button"
+name = "Agalaz Virtual Try-On"
 handle = "agalaz-tryon"
