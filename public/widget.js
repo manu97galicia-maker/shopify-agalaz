@@ -33,14 +33,15 @@
   var style = document.createElement('style');
   style.textContent = [
     '.agalaz-btn {',
-    '  display: inline-flex; align-items: center; gap: 8px;',
-    '  padding: 12px 24px; border: none; border-radius: 10px;',
-    '  background: #1e1b4b; color: white; cursor: pointer;',
-    '  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;',
+    '  display: flex; align-items: center; justify-content: center; gap: 8px;',
+    '  width: 100%; padding: 14px 24px; border: none; border-radius: 10px;',
+    '  background: #4f46e5; color: white; cursor: pointer;',
+    '  font-family: inherit;',
     '  font-size: 14px; font-weight: 800; letter-spacing: 0.05em;',
     '  transition: background 0.2s, transform 0.1s;',
+    '  box-sizing: border-box;',
     '}',
-    '.agalaz-btn:hover { background: #4f46e5; transform: translateY(-1px); }',
+    '.agalaz-btn:hover { background: #4338ca; transform: translateY(-1px); }',
     '.agalaz-btn:active { transform: translateY(0); }',
     '.agalaz-btn svg { width: 18px; height: 18px; }',
     '#' + MODAL_ID + ' {',
@@ -289,7 +290,7 @@
     if (target) {
       var container = document.createElement('div');
       container.id = 'agalaz-tryon';
-      container.style.cssText = 'margin: 12px 0; text-align: center;';
+      container.style.cssText = 'margin: 10px 0; width: 100%;';
       target.parentNode.insertBefore(container, target.nextSibling);
     }
   }
