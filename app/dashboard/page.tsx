@@ -71,9 +71,36 @@ function DashboardContent() {
       if (res.ok) {
         const data = await res.json();
         setProfile(data.partner);
+      } else if (res.status === 404) {
+        // No partner found — auto-setup this Shopify store
+        await autoSetupShop();
+        return;
       }
     } catch (e) {
       console.error('Failed to load profile:', e);
+    }
+    setLoading(false);
+  }
+
+  async function autoSetupShop() {
+    try {
+      const res = await fetch('/api/shop/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shop }),
+      });
+      const data = await res.json();
+      if (data.api_key) {
+        setApiKey(data.api_key);
+      }
+      // Reload profile after setup
+      const profileRes = await fetch(`/api/partners/profile?shop=${encodeURIComponent(shop)}`);
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        setProfile(profileData.partner);
+      }
+    } catch (e) {
+      console.error('Auto-setup failed:', e);
     }
     setLoading(false);
   }
@@ -176,8 +203,8 @@ function DashboardContent() {
 
       <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
 
-        {/* ─── Welcome Banner (new installs) ─── */}
-        {isNew && apiKey && (
+        {/* ─── Welcome Banner (new installs or auto-setup) ─── */}
+        {apiKey && (
           <div className="p-6 bg-emerald-50 border-2 border-emerald-200 rounded-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
