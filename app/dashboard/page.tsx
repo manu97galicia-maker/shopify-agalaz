@@ -37,9 +37,24 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const searchParams = useSearchParams();
-  const shop = searchParams.get('shop') || '';
   const isNew = searchParams.get('new') === 'true';
   const subscribed = searchParams.get('subscribed') === 'true';
+
+  // Detect shop from multiple sources: URL param, Shopify host param, referrer
+  const [shop, setShop] = useState(() => {
+    const fromParam = searchParams.get('shop') || '';
+    if (fromParam) return fromParam;
+    // Shopify sometimes passes host instead of shop
+    const host = searchParams.get('host') || '';
+    if (host) {
+      try {
+        const decoded = atob(host);
+        const match = decoded.match(/([^/]+\.myshopify\.com)/);
+        if (match) return match[1];
+      } catch {}
+    }
+    return '';
+  });
 
   const [profile, setProfile] = useState<PartnerProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,13 +65,34 @@ function DashboardContent() {
   const [error, setError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+  // Try to detect shop from URL on client side
+  useEffect(() => {
+    if (shop) return;
+    // Check referrer for shop domain
+    try {
+      const ref = document.referrer;
+      if (ref) {
+        const match = ref.match(/([^/]+\.myshopify\.com)/);
+        if (match) { setShop(match[1]); return; }
+      }
+    } catch {}
+    // Check ancestor origin (Shopify iframe)
+    try {
+      if (window.location.ancestorOrigins?.length > 0) {
+        const ancestor = window.location.ancestorOrigins[0];
+        const match = ancestor.match(/([^/]+\.myshopify\.com)/);
+        if (match) { setShop(match[1]); return; }
+      }
+    } catch {}
+    // Check URL hash or full URL
+    const fullUrl = window.location.href;
+    const shopMatch = fullUrl.match(/[?&]shop=([^&]+)/);
+    if (shopMatch) setShop(decodeURIComponent(shopMatch[1]));
+  }, []);
+
   useEffect(() => {
     if (!shop) return;
     loadProfile();
-    // Check for one-time API key in cookie
-    if (isNew) {
-      fetchApiKeyFromCookie();
-    }
   }, [shop]);
 
   useEffect(() => {
@@ -157,12 +193,26 @@ function DashboardContent() {
     );
   }
 
-  if (!shop) {
+  if (!shop && !loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-4 max-w-md px-6">
           <h1 className="font-serif text-2xl font-black text-slate-900">Agalaz Virtual Try-On</h1>
           <p className="text-slate-400 text-sm">Please open this app from your Shopify admin panel.</p>
+          <div className="pt-4">
+            <input
+              type="text"
+              placeholder="your-store.myshopify.com"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-center"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const val = (e.target as HTMLInputElement).value.trim();
+                  if (val) setShop(val.includes('.myshopify.com') ? val : val + '.myshopify.com');
+                }
+              }}
+            />
+            <p className="text-[10px] text-slate-300 mt-2">Or enter your shop domain and press Enter</p>
+          </div>
         </div>
       </div>
     );
