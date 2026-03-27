@@ -173,23 +173,71 @@
     if (e.data.type === 'agalaz:close') closeModal();
   });
 
+  function createButton(container) {
+    if (container.getAttribute('data-agalaz-init')) return;
+    container.setAttribute('data-agalaz-init', 'true');
+
+    var btn = document.createElement('button');
+    btn.className = 'agalaz-btn';
+    btn.innerHTML = sparklesSvg + ' ' + BUTTON_TEXT;
+    btn.addEventListener('click', function () {
+      var rawGarment = container.getAttribute('data-garment') || '';
+      var garmentUrl = resolveUrl(rawGarment);
+      if (!garmentUrl) garmentUrl = resolveUrl(detectProductImage());
+      openModal(garmentUrl);
+    });
+
+    container.appendChild(btn);
+  }
+
+  function isProductPage() {
+    var path = window.location.pathname;
+    return /\/products\//.test(path) || /\/producto\//.test(path);
+  }
+
+  function autoInjectButton() {
+    if (!isProductPage()) return;
+    if (document.querySelector('#agalaz-tryon, [data-agalaz-tryon]')) return;
+
+    // Find the best place to inject: after add-to-cart button or buy buttons
+    var targets = [
+      '.product-form__buttons',
+      '.product-form',
+      '[data-product-form]',
+      '.product__info-container',
+      '.product-single__meta',
+      '.product__submit',
+      'form[action*="/cart/add"]',
+      '.botones-de-compra',
+      '.buy-buttons',
+    ];
+
+    var target = null;
+    for (var i = 0; i < targets.length; i++) {
+      target = document.querySelector(targets[i]);
+      if (target) break;
+    }
+
+    if (!target) {
+      // Fallback: find the add to cart button and inject after its parent
+      var addToCart = document.querySelector('[name="add"], .add-to-cart, .product-form__submit, button[type="submit"][name="add"]');
+      if (addToCart) target = addToCart.closest('form') || addToCart.parentElement;
+    }
+
+    if (target) {
+      var container = document.createElement('div');
+      container.id = 'agalaz-tryon';
+      container.style.cssText = 'margin: 12px 0; text-align: center;';
+      target.parentNode.insertBefore(container, target.nextSibling);
+    }
+  }
+
   function init() {
+    autoInjectButton();
+
     var containers = document.querySelectorAll('#agalaz-tryon, [data-agalaz-tryon]');
     containers.forEach(function (container) {
-      if (container.getAttribute('data-agalaz-init')) return;
-      container.setAttribute('data-agalaz-init', 'true');
-
-      var btn = document.createElement('button');
-      btn.className = 'agalaz-btn';
-      btn.innerHTML = sparklesSvg + ' ' + BUTTON_TEXT;
-      btn.addEventListener('click', function () {
-        var rawGarment = container.getAttribute('data-garment') || '';
-        var garmentUrl = resolveUrl(rawGarment);
-        if (!garmentUrl) garmentUrl = resolveUrl(detectProductImage());
-        openModal(garmentUrl);
-      });
-
-      container.appendChild(btn);
+      createButton(container);
     });
   }
 
