@@ -19,6 +19,9 @@ export default function EmbedPage() {
   const [step, setStep] = useState<'upload' | 'result'>('upload');
   const [currentSize, setCurrentSize] = useState<string | null>(null);
   const [previewSize, setPreviewSize] = useState<string | null>(null);
+  const [availableSizes, setAvailableSizes] = useState<string[]>([]);
+  const [availableColors, setAvailableColors] = useState<string[]>([]);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
 
   const userRef = useRef<HTMLInputElement>(null);
   const garmentRef = useRef<HTMLInputElement>(null);
@@ -37,9 +40,12 @@ export default function EmbedPage() {
     poweredBy: 'Powered by Agalaz',
     errorGeneric: 'No se pudo generar. Intenta con otra foto.',
     errorNoPhoto: 'Sube una foto para continuar.',
-    yourSize: 'Tu talla actual',
-    previewIn: 'Previsualizar en talla',
-    sizeLabel: 'Talla (opcional)',
+    yourSize: '¿Qué talla usas?',
+    previewIn: 'Probar en otra talla',
+    sizeLabel: 'Tu talla',
+    tryOtherSize: '¿Quieres verte con otra talla?',
+    tryOtherColor: '¿Quieres probar otro color?',
+    regenerate: 'Generar con cambios',
     garmentSelected: 'Prenda seleccionada',
     garmentDetected: 'Prenda detectada',
     autoApply: 'Se aplicará automáticamente',
@@ -59,9 +65,12 @@ export default function EmbedPage() {
     poweredBy: 'Powered by Agalaz',
     errorGeneric: 'Generation failed. Try a different photo.',
     errorNoPhoto: 'Upload a photo to continue.',
-    yourSize: 'Your current size',
-    previewIn: 'Preview in size',
-    sizeLabel: 'Size (optional)',
+    yourSize: 'What size do you wear?',
+    previewIn: 'Try another size',
+    sizeLabel: 'Your size',
+    tryOtherSize: 'Want to try a different size?',
+    tryOtherColor: 'Want to try another color?',
+    regenerate: 'Generate with changes',
     garmentSelected: 'Selected garment',
     garmentDetected: 'Garment detected',
     autoApply: 'Will be applied automatically',
@@ -74,6 +83,10 @@ export default function EmbedPage() {
     setApiKey(params.get('key') || '');
     setGarmentUrl(params.get('garment') || null);
     if (params.get('lang') === 'es') setLang('es');
+    const sizes = params.get('sizes');
+    if (sizes) setAvailableSizes(sizes.split(',').filter(Boolean));
+    const colors = params.get('colors');
+    if (colors) setAvailableColors(colors.split(',').filter(Boolean));
   }, []);
 
   const [garmentError, setGarmentError] = useState(false);
@@ -233,6 +246,7 @@ export default function EmbedPage() {
     if (garmentUrl) payload.garmentUrl = garmentUrl;
     if (currentSize) payload.currentSize = currentSize;
     if (previewSize) payload.previewSize = previewSize;
+    if (selectedColor) payload.selectedColor = selectedColor;
 
     try {
       const res = await fetch('/api/v1/tryon', {
@@ -279,6 +293,7 @@ export default function EmbedPage() {
     setResultImage(null);
     setCurrentSize(null);
     setPreviewSize(null);
+    setSelectedColor(null);
     setError(null);
     setStep('upload');
   }
@@ -383,6 +398,24 @@ export default function EmbedPage() {
               </div>
             )}
 
+            {/* Size selector (pre-render) */}
+            {availableSizes.length > 0 && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.yourSize}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableSizes.map((size) => (
+                    <button key={size}
+                      onClick={() => setCurrentSize(currentSize === size ? null : size)}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                        currentSize === size ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-500 hover:border-indigo-300'
+                      }`}>
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="p-3 bg-red-50 rounded-xl border border-red-100 text-xs font-bold text-red-600">{error}</div>
             )}
@@ -421,6 +454,54 @@ export default function EmbedPage() {
                 <Download size={14} /> {t.download}
               </button>
             </div>
+
+            {/* Post-render: try another size */}
+            {availableSizes.length > 1 && (
+              <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 space-y-2">
+                <span className="text-[10px] font-black text-indigo-600">{t.tryOtherSize}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableSizes.filter(s => s !== currentSize).map((size) => (
+                    <button key={size}
+                      onClick={() => setPreviewSize(previewSize === size ? null : size)}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                        previewSize === size ? 'bg-indigo-600 text-white' : 'bg-white border border-indigo-200 text-indigo-500 hover:border-indigo-400'
+                      }`}>
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Post-render: try another color */}
+            {availableColors.length > 1 && (
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 space-y-2">
+                <span className="text-[10px] font-black text-amber-600">{t.tryOtherColor}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableColors.map((color) => (
+                    <button key={color}
+                      onClick={() => setSelectedColor(selectedColor === color ? null : color)}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                        selectedColor === color ? 'bg-amber-600 text-white' : 'bg-white border border-amber-200 text-amber-600 hover:border-amber-400'
+                      }`}>
+                      {color}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Regenerate button */}
+            {(previewSize || selectedColor) && (
+              <button onClick={handleGenerate} disabled={isLoading}
+                className="w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                {isLoading ? (
+                  <><Loader2 size={16} className="animate-spin" /> {t.generating}</>
+                ) : (
+                  <><Sparkles size={16} /> {t.regenerate}</>
+                )}
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -132,11 +132,73 @@
     }
   }
 
+  function extractProductVariants() {
+    var sizes = [];
+    var colors = [];
+
+    // Try Shopify JSON
+    var scripts = document.querySelectorAll('script[type="application/json"]');
+    for (var i = 0; i < scripts.length; i++) {
+      try {
+        var json = JSON.parse(scripts[i].textContent || '');
+        var variants = json.variants || (json.product && json.product.variants);
+        if (variants && variants.length) {
+          for (var v = 0; v < variants.length; v++) {
+            var opt1 = (variants[v].option1 || '').trim();
+            var opt2 = (variants[v].option2 || '').trim();
+            var opt3 = (variants[v].option3 || '').trim();
+            [opt1, opt2, opt3].forEach(function (val) {
+              if (!val) return;
+              if (/^(XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|\d{2,3})$/i.test(val)) {
+                if (sizes.indexOf(val) === -1) sizes.push(val);
+              } else if (sizes.indexOf(val) === -1 && val.length < 20) {
+                if (colors.indexOf(val) === -1) colors.push(val);
+              }
+            });
+          }
+          break;
+        }
+      } catch (e) { /* skip */ }
+    }
+
+    // Fallback: read from variant selectors on the page
+    if (sizes.length === 0 && colors.length === 0) {
+      var selects = document.querySelectorAll('select[name*="option"], .product-form__input select, .variant-input select');
+      selects.forEach(function (sel) {
+        var opts = sel.querySelectorAll('option');
+        opts.forEach(function (o) {
+          var val = o.textContent.trim();
+          if (!val || val === '--') return;
+          if (/^(XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|\d{2,3})$/i.test(val)) {
+            if (sizes.indexOf(val) === -1) sizes.push(val);
+          }
+        });
+      });
+
+      // Swatch buttons
+      var swatches = document.querySelectorAll('[data-option-value], .swatch__button, .color-swatch');
+      swatches.forEach(function (s) {
+        var val = (s.getAttribute('data-option-value') || s.getAttribute('title') || s.textContent || '').trim();
+        if (!val) return;
+        if (/^(XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|\d{2,3})$/i.test(val)) {
+          if (sizes.indexOf(val) === -1) sizes.push(val);
+        } else if (val.length < 20) {
+          if (colors.indexOf(val) === -1) colors.push(val);
+        }
+      });
+    }
+
+    return { sizes: sizes, colors: colors };
+  }
+
   function openModal(garmentUrl) {
     if (document.getElementById(MODAL_ID)) return;
 
+    var variants = extractProductVariants();
     var params = 'key=' + encodeURIComponent(apiKey) + '&lang=' + lang;
     if (garmentUrl) params += '&garment=' + encodeURIComponent(garmentUrl);
+    if (variants.sizes.length) params += '&sizes=' + encodeURIComponent(variants.sizes.join(','));
+    if (variants.colors.length) params += '&colors=' + encodeURIComponent(variants.colors.join(','));
 
     var overlay = document.createElement('div');
     overlay.id = MODAL_ID;
