@@ -15,13 +15,13 @@ redirect_urls = ["https://shopify-agalaz-tryon.vercel.app/api/auth/callback"]
 api_version = "2024-10"
 
   [[webhooks.subscriptions]]
-  topics = ["customers/data_request", "customers/redact", "shop/redact"]
-  uri = "/api/webhooks/gdpr"
-  compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
-
-  [[webhooks.subscriptions]]
   topics = ["app/uninstalled"]
   uri = "/api/webhooks/app-uninstalled"
+
+[webhooks.privacy_compliance]
+customer_data_request_url = "https://shopify-agalaz-tryon.vercel.app/api/webhooks/gdpr"
+customer_deletion_url = "https://shopify-agalaz-tryon.vercel.app/api/webhooks/gdpr"
+shop_deletion_url = "https://shopify-agalaz-tryon.vercel.app/api/webhooks/gdpr"
 
 [app_proxy]
 url = "https://shopify-agalaz-tryon.vercel.app/api/proxy"

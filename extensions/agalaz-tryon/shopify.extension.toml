@@ -1,6 +1,7 @@
 api_version = "2024-10"
 
 [[extensions]]
+uid = "2d2992da-8cbb-0ef7-5040-99f7d42ab1522e379aad"
 type = "theme"
 name = "Agalaz Virtual Try-On"
 handle = "agalaz-tryon"
