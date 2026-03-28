@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, Loader2, X, Camera, ImagePlus, Check, Download } from 'lucide-react';
+import { Sparkles, Loader2, X, Camera, ImagePlus, Check, Download, ThumbsUp, ThumbsDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 // Standalone embed page for B2B widget — no auth required
 // URL: /embed?key=API_KEY&garment=GARMENT_URL&lang=es
@@ -22,6 +22,8 @@ export default function EmbedPage() {
   const [availableSizes, setAvailableSizes] = useState<string[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [feedbackGiven, setFeedbackGiven] = useState<'liked' | 'disliked' | null>(null);
+  const [showSizeOptions, setShowSizeOptions] = useState(false);
 
   const userRef = useRef<HTMLInputElement>(null);
   const garmentRef = useRef<HTMLInputElement>(null);
@@ -51,6 +53,15 @@ export default function EmbedPage() {
     autoApply: 'Se aplicará automáticamente',
     serverLoad: 'Se cargará desde el servidor',
     uploadManual: 'Subir prenda manualmente',
+    feedbackQuestion: '¿Te ha gustado el resultado?',
+    feedbackYes: 'Sí, me encanta',
+    feedbackNo: 'No del todo',
+    sizeQuestion: '¿Quieres probar una talla más o menos?',
+    sizeUp: 'Talla más',
+    sizeDown: 'Talla menos',
+    thanksFeedback: '¡Gracias por tu opinión!',
+    tryDifferentSize: '¿Quieres ver cómo te queda en otra talla?',
+    selectExactSize: 'O elige una talla exacta:',
   } : {
     title: 'Virtual Try-On',
     subtitle: 'Upload your photo and try on this garment',
@@ -76,6 +87,15 @@ export default function EmbedPage() {
     autoApply: 'Will be applied automatically',
     serverLoad: 'Will load server-side',
     uploadManual: 'Upload garment manually',
+    feedbackQuestion: 'Did you like the result?',
+    feedbackYes: 'Yes, love it',
+    feedbackNo: 'Not really',
+    sizeQuestion: 'Want to try a size up or down?',
+    sizeUp: 'Size up',
+    sizeDown: 'Size down',
+    thanksFeedback: 'Thanks for your feedback!',
+    tryDifferentSize: 'Want to see how it fits in another size?',
+    selectExactSize: 'Or pick an exact size:',
   };
 
   useEffect(() => {
@@ -288,12 +308,32 @@ export default function EmbedPage() {
     a.click();
   }
 
+  function getSizeUpDown() {
+    if (!currentSize || availableSizes.length < 2) return { up: null, down: null };
+    const idx = availableSizes.indexOf(currentSize);
+    return {
+      down: idx > 0 ? availableSizes[idx - 1] : null,
+      up: idx < availableSizes.length - 1 ? availableSizes[idx + 1] : null,
+    };
+  }
+
+  function handleSizeShift(size: string) {
+    setPreviewSize(size);
+    // Auto-generate immediately
+    setTimeout(() => {
+      const btn = document.getElementById('agalaz-regenerate-btn');
+      if (btn) btn.click();
+    }, 100);
+  }
+
   function handleReset() {
     setUserImage(null);
     setResultImage(null);
     setCurrentSize(null);
     setPreviewSize(null);
     setSelectedColor(null);
+    setFeedbackGiven(null);
+    setShowSizeOptions(false);
     setError(null);
     setStep('upload');
   }
@@ -455,20 +495,63 @@ export default function EmbedPage() {
               </button>
             </div>
 
-            {/* Post-render: try another size */}
-            {availableSizes.length > 1 && (
-              <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 space-y-2">
-                <span className="text-[10px] font-black text-indigo-600">{t.tryOtherSize}</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {availableSizes.filter(s => s !== currentSize).map((size) => (
-                    <button key={size}
-                      onClick={() => setPreviewSize(previewSize === size ? null : size)}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${
-                        previewSize === size ? 'bg-indigo-600 text-white' : 'bg-white border border-indigo-200 text-indigo-500 hover:border-indigo-400'
-                      }`}>
-                      {size}
-                    </button>
-                  ))}
+            {/* Post-render feedback */}
+            {!feedbackGiven && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                <p className="text-sm font-black text-slate-700 text-center">{t.feedbackQuestion}</p>
+                <div className="flex gap-3">
+                  <button onClick={() => { setFeedbackGiven('liked'); setShowSizeOptions(true); }}
+                    className="flex-1 py-3 bg-emerald-50 border-2 border-emerald-200 rounded-xl text-xs font-black text-emerald-600 hover:bg-emerald-100 transition-all flex items-center justify-center gap-2">
+                    <ThumbsUp size={16} /> {t.feedbackYes}
+                  </button>
+                  <button onClick={() => { setFeedbackGiven('disliked'); setShowSizeOptions(true); }}
+                    className="flex-1 py-3 bg-orange-50 border-2 border-orange-200 rounded-xl text-xs font-black text-orange-600 hover:bg-orange-100 transition-all flex items-center justify-center gap-2">
+                    <ThumbsDown size={16} /> {t.feedbackNo}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* After feedback: size up/down quick options */}
+            {feedbackGiven && showSizeOptions && availableSizes.length > 1 && (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-3">
+                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest text-center">{t.thanksFeedback}</p>
+                <p className="text-sm font-black text-indigo-700 text-center">{t.sizeQuestion}</p>
+
+                {/* Quick size up / size down buttons */}
+                {currentSize && (
+                  <div className="flex gap-3">
+                    {getSizeUpDown().down && (
+                      <button onClick={() => handleSizeShift(getSizeUpDown().down!)}
+                        disabled={isLoading}
+                        className="flex-1 py-3 bg-white border-2 border-indigo-200 rounded-xl text-xs font-black text-indigo-600 hover:bg-indigo-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                        <ArrowDown size={16} /> {t.sizeDown} ({getSizeUpDown().down})
+                      </button>
+                    )}
+                    {getSizeUpDown().up && (
+                      <button onClick={() => handleSizeShift(getSizeUpDown().up!)}
+                        disabled={isLoading}
+                        className="flex-1 py-3 bg-white border-2 border-indigo-200 rounded-xl text-xs font-black text-indigo-600 hover:bg-indigo-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                        <ArrowUp size={16} /> {t.sizeUp} ({getSizeUpDown().up})
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Full size selector */}
+                <div className="space-y-2">
+                  <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{t.selectExactSize}</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableSizes.filter(s => s !== currentSize).map((size) => (
+                      <button key={size}
+                        onClick={() => setPreviewSize(previewSize === size ? null : size)}
+                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                          previewSize === size ? 'bg-indigo-600 text-white' : 'bg-white border border-indigo-200 text-indigo-500 hover:border-indigo-400'
+                        }`}>
+                        {size}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -493,7 +576,7 @@ export default function EmbedPage() {
 
             {/* Regenerate button */}
             {(previewSize || selectedColor) && (
-              <button onClick={handleGenerate} disabled={isLoading}
+              <button id="agalaz-regenerate-btn" onClick={handleGenerate} disabled={isLoading}
                 className="w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                 {isLoading ? (
                   <><Loader2 size={16} className="animate-spin" /> {t.generating}</>
