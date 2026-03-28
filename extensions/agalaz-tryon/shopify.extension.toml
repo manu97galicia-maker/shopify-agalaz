@@ -1,0 +1,11 @@
+api_version = "2024-10"
+
+[[extensions]]
+type = "theme"
+name = "Agalaz Virtual Try-On"
+handle = "agalaz-tryon"
+
+  [[extensions.blocks]]
+  type = "app-block"
+  name = "Virtual Try-On Button"
+  file = "blocks/tryon-button.liquid"
