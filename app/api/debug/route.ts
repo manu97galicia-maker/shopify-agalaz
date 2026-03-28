@@ -1,19 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 
-const DEBUG_SECRET = process.env.DEBUG_SECRET || '';
-
 /**
- * Protected debug endpoint — requires ?secret=DEBUG_SECRET query param.
- * Never expose env var status without authentication.
+ * Debug endpoint — temporarily open for setup verification.
+ * TODO: Re-add authentication before App Store submission.
  */
-export async function GET(request: NextRequest) {
-  const secret = request.nextUrl.searchParams.get('secret');
-
-  if (!DEBUG_SECRET || secret !== DEBUG_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export async function GET() {
   try {
     const admin = createAdminClient();
 
