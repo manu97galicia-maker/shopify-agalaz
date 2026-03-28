@@ -1,7 +1,7 @@
 # Agalaz Virtual Try-On — Shopify App Configuration
 
 name = "Agalaz Virtual Try-On"
-client_id = "861f1e9da16336d99ba9d59f77b98807"
+client_id = "7523a3b92a09addee08857ff2f4e55f7"
 application_url = "https://shopify-agalaz-tryon.vercel.app"
 embedded = true
 
