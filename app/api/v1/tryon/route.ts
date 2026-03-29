@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     let userImage = body.userImage || body.faceImage;
-    let { clothingImage, garmentUrl, currentSize, previewSize } = body;
+    let { clothingImage, garmentUrl, currentSize, previewSize, lastRenderedImage } = body;
 
     if (!userImage) {
       return NextResponse.json(
@@ -154,11 +154,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Clean lastRenderedImage if provided (for size re-generation)
+    let cleanRenderedImage: string | undefined;
+    if (lastRenderedImage) {
+      cleanRenderedImage = cleanBase64(lastRenderedImage);
+      if (cleanRenderedImage.length < 100) cleanRenderedImage = undefined;
+    }
+
     const { image, failReason } = await generateTryOnImage(
       userImage,
       finalClothingImage || undefined,
       undefined,
-      undefined,
+      cleanRenderedImage,
       garmentMimeType,
       currentSize || undefined,
       previewSize || undefined,

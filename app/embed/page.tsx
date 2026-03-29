@@ -252,6 +252,10 @@ export default function EmbedPage() {
     if (currentSize) payload.currentSize = currentSize;
     if (previewSize) payload.previewSize = previewSize;
     if (selectedColor) payload.selectedColor = selectedColor;
+    // Send rendered image for size re-generation (modify existing result)
+    if (resultImage && (previewSize || selectedColor)) {
+      payload.lastRenderedImage = resultImage;
+    }
 
     try {
       const res = await fetch('/api/v1/tryon', {
@@ -453,118 +457,132 @@ export default function EmbedPage() {
             </button>
           </div>
         ) : (
-          /* ───── Result view ───── */
-          <div className="max-w-sm mx-auto space-y-4 pt-2">
-            <p className="text-center text-white/30 text-[11px] font-semibold uppercase tracking-[0.12em]">{t.result}</p>
+          /* ───── Result view — horizontal layout ───── */
+          <div className="max-w-4xl mx-auto pt-2">
+            <p className="text-center text-white/30 text-[11px] font-semibold uppercase tracking-[0.12em] mb-4">{t.result}</p>
 
-            {/* Result image */}
-            <div className="rounded-2xl overflow-hidden ring-1 ring-white/[0.08]">
-              <img src={resultImage!} alt="Try-on result" className="w-full" style={{ aspectRatio: '9 / 16', objectFit: 'cover' }} />
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex gap-3">
-              <button onClick={handleReset}
-                className={`flex-1 py-3.5 ${glass} ${glassHover} transition-all text-[12px] font-semibold text-white/60 flex items-center justify-center gap-2`}>
-                <RotateCcw size={14} /> {t.tryAgain}
-              </button>
-              <button onClick={handleDownload}
-                className="flex-1 py-3.5 bg-white text-black rounded-2xl text-[12px] font-semibold hover:bg-white/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-                <Download size={14} /> {t.download}
-              </button>
-            </div>
-
-            {/* Feedback */}
-            {!feedbackGiven && (
-              <div className={`${glass} p-5 space-y-3`}>
-                <p className="text-[14px] font-semibold text-white/80 text-center">{t.feedbackQuestion}</p>
-                <div className="flex gap-3">
-                  <button onClick={() => { setFeedbackGiven('liked'); setShowSizeOptions(true); }}
-                    className="flex-1 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-[12px] font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2">
-                    <ThumbsUp size={14} /> {t.feedbackYes}
+            <div className="flex flex-col md:flex-row gap-5">
+              {/* Left: Image */}
+              <div className="md:w-1/2 shrink-0">
+                <div className="rounded-2xl overflow-hidden ring-1 ring-white/[0.08] relative">
+                  <img src={resultImage!} alt="Try-on result" className="w-full" style={{ aspectRatio: '3 / 4', objectFit: 'cover' }} />
+                  {isLoading && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <Loader2 size={28} className="animate-spin text-white" />
+                        <span className="text-[12px] text-white/60 font-medium">{t.generating}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {/* Action buttons below image */}
+                <div className="flex gap-3 mt-3">
+                  <button onClick={handleReset}
+                    className={`flex-1 py-3 ${glass} ${glassHover} transition-all text-[12px] font-semibold text-white/60 flex items-center justify-center gap-2`}>
+                    <RotateCcw size={14} /> {t.tryAgain}
                   </button>
-                  <button onClick={() => { setFeedbackGiven('disliked'); setShowSizeOptions(true); }}
-                    className="flex-1 py-3 bg-orange-500/10 border border-orange-500/20 rounded-xl text-[12px] font-semibold text-orange-400 hover:bg-orange-500/20 transition-all flex items-center justify-center gap-2">
-                    <ThumbsDown size={14} /> {t.feedbackNo}
+                  <button onClick={handleDownload}
+                    className="flex-1 py-3 bg-white text-black rounded-2xl text-[12px] font-semibold hover:bg-white/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                    <Download size={14} /> {t.download}
                   </button>
                 </div>
               </div>
-            )}
 
-            {/* Size options after feedback */}
-            {feedbackGiven && showSizeOptions && availableSizes.length > 1 && (
-              <div className={`${glass} p-5 space-y-4`}>
-                <p className="text-[14px] font-semibold text-white/80 text-center">{t.sizeQuestion}</p>
-
-                {currentSize && (
-                  <div className="flex gap-3">
-                    {getSizeUpDown().down && (
-                      <button onClick={() => handleSizeShift(getSizeUpDown().down!)}
-                        disabled={isLoading}
-                        className={`flex-1 py-3 ${glass} ${glassHover} transition-all text-[12px] font-semibold text-white/60 flex items-center justify-center gap-2 disabled:opacity-30`}>
-                        <ArrowDown size={14} /> {t.sizeDown} ({getSizeUpDown().down})
+              {/* Right: Controls panel */}
+              <div className="md:w-1/2 space-y-4">
+                {/* Feedback */}
+                {!feedbackGiven && (
+                  <div className={`${glass} p-5 space-y-3`}>
+                    <p className="text-[14px] font-semibold text-white/80 text-center">{t.feedbackQuestion}</p>
+                    <div className="flex gap-3">
+                      <button onClick={() => { setFeedbackGiven('liked'); setShowSizeOptions(true); }}
+                        className="flex-1 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-[12px] font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2">
+                        <ThumbsUp size={14} /> {t.feedbackYes}
                       </button>
-                    )}
-                    {getSizeUpDown().up && (
-                      <button onClick={() => handleSizeShift(getSizeUpDown().up!)}
-                        disabled={isLoading}
-                        className={`flex-1 py-3 ${glass} ${glassHover} transition-all text-[12px] font-semibold text-white/60 flex items-center justify-center gap-2 disabled:opacity-30`}>
-                        <ArrowUp size={14} /> {t.sizeUp} ({getSizeUpDown().up})
+                      <button onClick={() => { setFeedbackGiven('disliked'); setShowSizeOptions(true); }}
+                        className="flex-1 py-3 bg-orange-500/10 border border-orange-500/20 rounded-xl text-[12px] font-semibold text-orange-400 hover:bg-orange-500/20 transition-all flex items-center justify-center gap-2">
+                        <ThumbsDown size={14} /> {t.feedbackNo}
                       </button>
-                    )}
+                    </div>
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <span className="text-[11px] font-semibold text-white/25 uppercase tracking-[0.08em]">{t.selectExactSize}</span>
-                  <div className="flex flex-wrap gap-2">
-                    {availableSizes.filter(s => s !== currentSize).map((size) => (
-                      <button key={size}
-                        onClick={() => setPreviewSize(previewSize === size ? null : size)}
-                        className={`px-4 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
-                          previewSize === size
-                            ? 'bg-white text-black'
-                            : 'bg-white/[0.06] text-white/50 border border-white/[0.08] hover:bg-white/[0.12]'
-                        }`}>
-                        {size}
-                      </button>
-                    ))}
+                {/* Size options after feedback */}
+                {feedbackGiven && showSizeOptions && availableSizes.length > 1 && (
+                  <div className={`${glass} p-5 space-y-4`}>
+                    <p className="text-[14px] font-semibold text-white/80 text-center">{t.sizeQuestion}</p>
+
+                    {currentSize && (
+                      <div className="flex gap-3">
+                        {getSizeUpDown().down && (
+                          <button onClick={() => handleSizeShift(getSizeUpDown().down!)}
+                            disabled={isLoading}
+                            className={`flex-1 py-3 ${glass} ${glassHover} transition-all text-[12px] font-semibold text-white/60 flex items-center justify-center gap-2 disabled:opacity-30`}>
+                            <ArrowDown size={14} /> {t.sizeDown} ({getSizeUpDown().down})
+                          </button>
+                        )}
+                        {getSizeUpDown().up && (
+                          <button onClick={() => handleSizeShift(getSizeUpDown().up!)}
+                            disabled={isLoading}
+                            className={`flex-1 py-3 ${glass} ${glassHover} transition-all text-[12px] font-semibold text-white/60 flex items-center justify-center gap-2 disabled:opacity-30`}>
+                            <ArrowUp size={14} /> {t.sizeUp} ({getSizeUpDown().up})
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <span className="text-[11px] font-semibold text-white/25 uppercase tracking-[0.08em]">{t.selectExactSize}</span>
+                      <div className="flex flex-wrap gap-2">
+                        {availableSizes.filter(s => s !== currentSize).map((size) => (
+                          <button key={size}
+                            onClick={() => setPreviewSize(previewSize === size ? null : size)}
+                            className={`px-4 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
+                              previewSize === size
+                                ? 'bg-white text-black'
+                                : 'bg-white/[0.06] text-white/50 border border-white/[0.08] hover:bg-white/[0.12]'
+                            }`}>
+                            {size}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Color options */}
-            {availableColors.length > 1 && (
-              <div className={`${glass} p-4 space-y-2.5`}>
-                <span className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.08em]">{t.tryOtherColor}</span>
-                <div className="flex flex-wrap gap-2">
-                  {availableColors.map((color) => (
-                    <button key={color}
-                      onClick={() => setSelectedColor(selectedColor === color ? null : color)}
-                      className={`px-4 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
-                        selectedColor === color
-                          ? 'bg-white text-black'
-                          : 'bg-white/[0.06] text-white/50 border border-white/[0.08] hover:bg-white/[0.12]'
-                      }`}>
-                      {color}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Regenerate */}
-            {(previewSize || selectedColor) && (
-              <button id="agalaz-regenerate-btn" onClick={handleGenerate} disabled={isLoading}
-                className="w-full py-4 bg-white text-black rounded-2xl text-[14px] font-semibold hover:bg-white/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-30">
-                {isLoading ? (
-                  <><Loader2 size={16} className="animate-spin" /> {t.generating}</>
-                ) : (
-                  <><Sparkles size={16} /> {t.regenerate}</>
                 )}
-              </button>
-            )}
+
+                {/* Color options */}
+                {availableColors.length > 1 && (
+                  <div className={`${glass} p-4 space-y-2.5`}>
+                    <span className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.08em]">{t.tryOtherColor}</span>
+                    <div className="flex flex-wrap gap-2">
+                      {availableColors.map((color) => (
+                        <button key={color}
+                          onClick={() => setSelectedColor(selectedColor === color ? null : color)}
+                          className={`px-4 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
+                            selectedColor === color
+                              ? 'bg-white text-black'
+                              : 'bg-white/[0.06] text-white/50 border border-white/[0.08] hover:bg-white/[0.12]'
+                          }`}>
+                          {color}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Regenerate */}
+                {(previewSize || selectedColor) && (
+                  <button id="agalaz-regenerate-btn" onClick={handleGenerate} disabled={isLoading}
+                    className="w-full py-4 bg-white text-black rounded-2xl text-[14px] font-semibold hover:bg-white/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-30">
+                    {isLoading ? (
+                      <><Loader2 size={16} className="animate-spin" /> {t.generating}</>
+                    ) : (
+                      <><Sparkles size={16} /> {t.regenerate}</>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>
