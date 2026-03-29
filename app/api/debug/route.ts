@@ -1,11 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 
-/**
- * Debug endpoint — temporarily open for setup verification.
- * TODO: Re-add authentication before App Store submission.
- */
-export async function GET() {
+const DEBUG_SECRET = process.env.DEBUG_SECRET || '';
+
+export async function GET(request: NextRequest) {
+  const secret = request.nextUrl.searchParams.get('secret');
+  if (!DEBUG_SECRET || secret !== DEBUG_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const admin = createAdminClient();
 
