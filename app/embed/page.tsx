@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, Loader2, X, Camera, ImagePlus, Check, Download, ThumbsUp, ThumbsDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Sparkles, Loader2, X, Camera, Check, Download, ThumbsUp, ThumbsDown, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
 
 // Standalone embed page for B2B widget — no auth required
 // URL: /embed?key=API_KEY&garment=GARMENT_URL&lang=es
@@ -30,72 +30,60 @@ export default function EmbedPage() {
 
   const t = lang === 'es' ? {
     title: 'Prueba Virtual',
-    subtitle: 'Sube tu foto y pruébate esta prenda',
+    subtitle: 'Sube tu foto y descubre cómo te queda',
     photo: 'Tu foto',
-    photoHint: 'Selfie, medio cuerpo o cuerpo entero',
+    photoHint: 'Selfie o cuerpo entero',
     generate: 'Probar prenda',
-    generating: 'Generando...',
-    loadingHint: 'Puede tardar 30s - 1 min',
-    result: 'Tu prueba virtual',
-    tryAgain: 'Probar de nuevo',
+    generating: 'Creando tu look...',
+    loadingHint: 'Esto puede tardar hasta 1 min',
+    result: 'Tu look',
+    tryAgain: 'Repetir',
     download: 'Guardar',
-    poweredBy: 'Powered by Agalaz',
     errorGeneric: 'No se pudo generar. Intenta con otra foto.',
     errorNoPhoto: 'Sube una foto para continuar.',
-    yourSize: '¿Qué talla usas?',
-    previewIn: 'Probar en otra talla',
-    sizeLabel: 'Tu talla',
-    tryOtherSize: '¿Quieres verte con otra talla?',
-    tryOtherColor: '¿Quieres probar otro color?',
-    regenerate: 'Generar con cambios',
-    garmentSelected: 'Prenda seleccionada',
+    yourSize: 'Tu talla',
+    tryOtherSize: 'Probar otra talla',
+    tryOtherColor: 'Probar otro color',
+    regenerate: 'Aplicar cambios',
     garmentDetected: 'Prenda detectada',
-    autoApply: 'Se aplicará automáticamente',
-    serverLoad: 'Se cargará desde el servidor',
-    uploadManual: 'Subir prenda manualmente',
-    feedbackQuestion: '¿Te ha gustado el resultado?',
-    feedbackYes: 'Sí, me encanta',
-    feedbackNo: 'No del todo',
-    sizeQuestion: '¿Quieres probar una talla más o menos?',
-    sizeUp: 'Talla más',
-    sizeDown: 'Talla menos',
-    thanksFeedback: '¡Gracias por tu opinión!',
-    tryDifferentSize: '¿Quieres ver cómo te queda en otra talla?',
-    selectExactSize: 'O elige una talla exacta:',
+    serverLoad: 'Lista para probarte',
+    uploadManual: 'Subir prenda',
+    feedbackQuestion: '¿Te gusta cómo te queda?',
+    feedbackYes: 'Me encanta',
+    feedbackNo: 'No mucho',
+    sizeQuestion: '¿Probar otra talla?',
+    sizeUp: 'Más grande',
+    sizeDown: 'Más pequeña',
+    thanksFeedback: 'Gracias',
+    selectExactSize: 'Elige talla',
   } : {
     title: 'Virtual Try-On',
-    subtitle: 'Upload your photo and try on this garment',
+    subtitle: 'Upload your photo and see how it looks',
     photo: 'Your photo',
-    photoHint: 'Selfie, half body, or full body',
+    photoHint: 'Selfie or full body',
     generate: 'Try it on',
-    generating: 'Generating...',
-    loadingHint: 'This may take 30s - 1 min',
-    result: 'Your virtual try-on',
-    tryAgain: 'Try again',
+    generating: 'Creating your look...',
+    loadingHint: 'This may take up to 1 min',
+    result: 'Your look',
+    tryAgain: 'Retry',
     download: 'Save',
-    poweredBy: 'Powered by Agalaz',
     errorGeneric: 'Generation failed. Try a different photo.',
     errorNoPhoto: 'Upload a photo to continue.',
-    yourSize: 'What size do you wear?',
-    previewIn: 'Try another size',
-    sizeLabel: 'Your size',
-    tryOtherSize: 'Want to try a different size?',
-    tryOtherColor: 'Want to try another color?',
-    regenerate: 'Generate with changes',
-    garmentSelected: 'Selected garment',
+    yourSize: 'Your size',
+    tryOtherSize: 'Try another size',
+    tryOtherColor: 'Try another color',
+    regenerate: 'Apply changes',
     garmentDetected: 'Garment detected',
-    autoApply: 'Will be applied automatically',
-    serverLoad: 'Will load server-side',
-    uploadManual: 'Upload garment manually',
-    feedbackQuestion: 'Did you like the result?',
-    feedbackYes: 'Yes, love it',
-    feedbackNo: 'Not really',
-    sizeQuestion: 'Want to try a size up or down?',
+    serverLoad: 'Ready to try on',
+    uploadManual: 'Upload garment',
+    feedbackQuestion: 'How does it look?',
+    feedbackYes: 'Love it',
+    feedbackNo: 'Not great',
+    sizeQuestion: 'Try another size?',
     sizeUp: 'Size up',
     sizeDown: 'Size down',
-    thanksFeedback: 'Thanks for your feedback!',
-    tryDifferentSize: 'Want to see how it fits in another size?',
-    selectExactSize: 'Or pick an exact size:',
+    thanksFeedback: 'Thanks',
+    selectExactSize: 'Pick a size',
   };
 
   useEffect(() => {
@@ -143,9 +131,7 @@ export default function EmbedPage() {
   }
 
   async function fetchImageAsBase64(url: string): Promise<string> {
-    // Use server-side image proxy to bypass CORS
     const proxyUrl = `/api/v1/image-proxy?url=${encodeURIComponent(url)}`;
-
     try {
       const res = await fetch(proxyUrl);
       if (res.ok) {
@@ -257,7 +243,6 @@ export default function EmbedPage() {
 
   async function handleGenerate() {
     if (!userImage) { setError(t.errorNoPhoto); return; }
-
     setIsLoading(true);
     setError(null);
 
@@ -277,15 +262,8 @@ export default function EmbedPage() {
         },
         body: JSON.stringify(payload),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || t.errorGeneric);
-        setIsLoading(false);
-        return;
-      }
-
+      if (!res.ok) { setError(data.error || t.errorGeneric); setIsLoading(false); return; }
       if (data.image) {
         setResultImage(data.image);
         setStep('result');
@@ -296,7 +274,6 @@ export default function EmbedPage() {
     } catch {
       setError(t.errorGeneric);
     }
-
     setIsLoading(false);
   }
 
@@ -319,7 +296,6 @@ export default function EmbedPage() {
 
   function handleSizeShift(size: string) {
     setPreviewSize(size);
-    // Auto-generate immediately
     setTimeout(() => {
       const btn = document.getElementById('agalaz-regenerate-btn');
       if (btn) btn.click();
@@ -338,116 +314,111 @@ export default function EmbedPage() {
     setStep('upload');
   }
 
+  // Glass card style
+  const glass = 'bg-white/[0.06] backdrop-blur-xl border border-white/[0.1] rounded-2xl';
+  const glassHover = 'hover:bg-white/[0.12] hover:border-white/[0.2]';
+
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans">
+    <div className="min-h-screen bg-black flex flex-col" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif' }}>
+
       {/* Header */}
-      <div className="border-b border-slate-100 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles size={16} className="text-indigo-600" />
-          <span className="text-sm font-black text-slate-900 tracking-tight">{t.title}</span>
-          <span className="text-[8px] text-slate-300 font-bold">•</span>
-          <a href="https://agalaz.com" target="_blank" rel="noopener noreferrer"
-            className="text-[9px] font-bold text-slate-300 hover:text-indigo-500 transition-colors">
-            powered by <span className="text-indigo-400">agalaz.com</span>
-          </a>
+      <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
+            <Sparkles size={14} className="text-white" />
+          </div>
+          <span className="text-[15px] font-semibold text-white tracking-[-0.01em]">{t.title}</span>
         </div>
         <button onClick={() => window.parent.postMessage({ type: 'agalaz:close' }, '*')}
-          className="p-1.5 hover:bg-slate-100 rounded-full transition-colors">
-          <X size={18} className="text-slate-400" />
+          className="w-8 h-8 flex items-center justify-center rounded-full bg-white/[0.08] hover:bg-white/[0.15] transition-all">
+          <X size={16} className="text-white/60" />
         </button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-6">
+      <div className="flex-1 overflow-y-auto px-5 pb-6">
         {step === 'upload' ? (
-          <div className="max-w-sm mx-auto space-y-6">
-            <p className="text-center text-slate-400 text-xs font-light">{t.subtitle}</p>
+          <div className="max-w-sm mx-auto space-y-5 pt-2">
+            <p className="text-center text-white/40 text-[13px] font-light tracking-[-0.01em]">{t.subtitle}</p>
 
             {/* Photo upload */}
-            <div className="max-w-[200px] mx-auto">
-              <div className="flex flex-col gap-1.5 w-full">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">{t.photo}</span>
-                <div
-                  className={`relative w-full rounded-xl overflow-hidden transition-all ${
-                    userImage ? 'ring-2 ring-indigo-200' : 'border-2 border-dashed border-slate-200 bg-slate-50'
-                  }`}
-                  style={{ aspectRatio: '3 / 4' }}
-                >
-                  {userImage ? (
-                    <div className="w-full h-full relative group">
-                      <img src={`data:image/jpeg;base64,${userImage}`} alt={t.photo} className="w-full h-full object-cover" />
-                      <div className="absolute top-2 left-2 bg-emerald-500 rounded-full p-1 shadow-sm">
-                        <Check size={12} className="text-white" />
-                      </div>
-                      <button onClick={() => setUserImage(null)}
-                        className="absolute top-2 right-2 p-1.5 bg-white/90 backdrop-blur-sm rounded-full hover:bg-white transition-colors shadow-sm">
-                        <X size={14} className="text-slate-500" />
-                      </button>
+            <div className="max-w-[220px] mx-auto">
+              <div
+                className={`relative w-full rounded-2xl overflow-hidden transition-all duration-300 ${
+                  userImage ? 'ring-2 ring-violet-500/50' : `${glass} cursor-pointer`
+                }`}
+                style={{ aspectRatio: '3 / 4' }}
+                onClick={() => !userImage && userRef.current?.click()}
+              >
+                {userImage ? (
+                  <div className="w-full h-full relative group">
+                    <img src={`data:image/jpeg;base64,${userImage}`} alt={t.photo} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <div className="absolute top-3 left-3 bg-emerald-500 rounded-full p-1">
+                      <Check size={10} className="text-white" />
                     </div>
-                  ) : (
-                    <button onClick={() => userRef.current?.click()}
-                      className="flex flex-col items-center justify-center w-full h-full p-4 hover:bg-indigo-50/50 transition-all">
-                      <div className="p-3 bg-white border border-slate-200 rounded-xl mb-3 shadow-sm">
-                        <Camera size={20} className="text-indigo-600" />
-                      </div>
-                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-300">Upload</span>
-                      <ImagePlus size={12} className="text-slate-200 mt-2" />
+                    <button onClick={(e) => { e.stopPropagation(); setUserImage(null); }}
+                      className="absolute top-3 right-3 w-7 h-7 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-full hover:bg-black/70 transition-all">
+                      <X size={12} className="text-white/80" />
                     </button>
-                  )}
-                </div>
-                <p className="text-[9px] font-bold text-slate-300 text-center">{t.photoHint}</p>
+                    <p className="absolute bottom-3 left-0 right-0 text-center text-white/70 text-[11px] font-medium">{t.photo}</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center w-full h-full p-6">
+                    <div className="w-14 h-14 rounded-full bg-white/[0.08] flex items-center justify-center mb-4">
+                      <Camera size={24} className="text-white/50" />
+                    </div>
+                    <span className="text-[13px] font-medium text-white/40">{t.photo}</span>
+                    <span className="text-[11px] text-white/25 mt-1">{t.photoHint}</span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Garment preview */}
             {garmentImage ? (
-              <div className="flex items-center gap-3 p-3 rounded-xl border bg-indigo-50 border-indigo-100">
-                <div className="w-12 h-16 rounded-lg overflow-hidden ring-2 ring-indigo-200 shrink-0">
+              <div className={`${glass} p-3 flex items-center gap-3`}>
+                <div className="w-11 h-14 rounded-xl overflow-hidden ring-1 ring-white/10 shrink-0">
                   <img src={`data:image/jpeg;base64,${garmentImage}`} alt="Garment" className="w-full h-full object-cover" />
                 </div>
-                <div className="flex-1">
-                  <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{t.garmentSelected}</span>
-                  <p className="text-[10px] text-indigo-400 mt-0.5">{t.autoApply}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-white/70">{t.garmentDetected}</p>
+                  <p className="text-[10px] text-white/30 mt-0.5">{t.serverLoad}</p>
                 </div>
-                <button onClick={() => { setGarmentImage(null); garmentRef.current?.click(); }}
-                  className="p-1.5 hover:bg-indigo-100 rounded-full transition-colors">
-                  <X size={14} className="text-indigo-400" />
-                </button>
+              </div>
+            ) : garmentUrl ? (
+              <div className={`${glass} p-3 flex items-center gap-3`}>
+                <div className="w-11 h-14 rounded-xl overflow-hidden ring-1 ring-white/10 shrink-0">
+                  <img src={`/api/v1/image-proxy?url=${encodeURIComponent(garmentUrl)}`}
+                    alt="Garment"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    className="w-full h-full object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-semibold text-white/70">{t.garmentDetected}</p>
+                  <p className="text-[10px] text-white/30 mt-0.5">{t.serverLoad}</p>
+                </div>
               </div>
             ) : (
-              <div className="space-y-2">
-                {garmentUrl && (
-                  <div className="flex items-center gap-3 p-3 rounded-xl border bg-amber-50 border-amber-200">
-                    <div className="w-12 h-16 rounded-lg overflow-hidden ring-2 ring-amber-200 shrink-0">
-                      <img src={`/api/v1/image-proxy?url=${encodeURIComponent(garmentUrl)}`}
-                        alt="Garment"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest">{t.garmentDetected}</span>
-                      <p className="text-[10px] text-amber-500 mt-0.5">{t.serverLoad}</p>
-                    </div>
-                  </div>
-                )}
-                <button onClick={() => garmentRef.current?.click()}
-                  className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 transition-all">
-                  <ImagePlus size={16} className="text-slate-400" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.uploadManual}</span>
-                </button>
-              </div>
+              <button onClick={() => garmentRef.current?.click()}
+                className={`w-full p-3.5 ${glass} ${glassHover} transition-all flex items-center justify-center gap-2`}>
+                <Camera size={14} className="text-white/40" />
+                <span className="text-[12px] font-medium text-white/40">{t.uploadManual}</span>
+              </button>
             )}
 
-            {/* Size selector (pre-render) */}
+            {/* Size selector */}
             {availableSizes.length > 0 && (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t.yourSize}</span>
-                <div className="flex flex-wrap gap-1.5">
+              <div className="space-y-2.5">
+                <span className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.08em] px-1">{t.yourSize}</span>
+                <div className="flex flex-wrap gap-2">
                   {availableSizes.map((size) => (
                     <button key={size}
                       onClick={() => setCurrentSize(currentSize === size ? null : size)}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${
-                        currentSize === size ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-500 hover:border-indigo-300'
+                      className={`px-4 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
+                        currentSize === size
+                          ? 'bg-white text-black'
+                          : 'bg-white/[0.06] text-white/50 border border-white/[0.08] hover:bg-white/[0.12] hover:text-white/70'
                       }`}>
                       {size}
                     </button>
@@ -456,97 +427,104 @@ export default function EmbedPage() {
               </div>
             )}
 
+            {/* Error */}
             {error && (
-              <div className="p-3 bg-red-50 rounded-xl border border-red-100 text-xs font-bold text-red-600">{error}</div>
+              <div className="p-3.5 bg-red-500/10 border border-red-500/20 rounded-2xl text-[12px] font-medium text-red-400">{error}</div>
             )}
 
+            {/* Generate button */}
             <button onClick={handleGenerate} disabled={!userImage || isLoading}
-              className={`w-full py-4 flex items-center justify-center gap-3 rounded-xl transition-all font-black uppercase tracking-[0.15em] text-xs ${
-                userImage && !isLoading ? 'bg-slate-900 text-white hover:bg-indigo-600 shadow-lg' : 'bg-slate-100 text-slate-300'
+              className={`w-full py-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 text-[14px] font-semibold tracking-[-0.01em] ${
+                userImage && !isLoading
+                  ? 'bg-white text-black hover:bg-white/90 active:scale-[0.98]'
+                  : 'bg-white/[0.06] text-white/20 cursor-not-allowed'
               }`}>
               {isLoading ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center gap-1.5">
+                  <div className="flex items-center gap-2.5">
+                    <Loader2 size={18} className="animate-spin" />
                     <span>{t.generating}</span>
-                    <span className="text-[10px] font-normal normal-case tracking-normal text-slate-300 mt-1">{t.loadingHint}</span>
                   </div>
-                </>
+                  <span className="text-[11px] font-normal text-black/40">{t.loadingHint}</span>
+                </div>
               ) : (
-                <><Sparkles size={18} /> {t.generate}</>
+                <><Sparkles size={16} /> {t.generate}</>
               )}
             </button>
           </div>
         ) : (
-          /* Result view */
-          <div className="max-w-sm mx-auto space-y-4">
-            <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.result}</p>
-            <div className="rounded-2xl overflow-hidden border-2 border-slate-100">
+          /* ───── Result view ───── */
+          <div className="max-w-sm mx-auto space-y-4 pt-2">
+            <p className="text-center text-white/30 text-[11px] font-semibold uppercase tracking-[0.12em]">{t.result}</p>
+
+            {/* Result image */}
+            <div className="rounded-2xl overflow-hidden ring-1 ring-white/[0.08]">
               <img src={resultImage!} alt="Try-on result" className="w-full" style={{ aspectRatio: '9 / 16', objectFit: 'cover' }} />
             </div>
+
+            {/* Action buttons */}
             <div className="flex gap-3">
               <button onClick={handleReset}
-                className="flex-1 py-3 border border-slate-200 rounded-xl text-xs font-black text-slate-500 uppercase tracking-widest hover:bg-slate-50 transition-colors">
-                {t.tryAgain}
+                className={`flex-1 py-3.5 ${glass} ${glassHover} transition-all text-[12px] font-semibold text-white/60 flex items-center justify-center gap-2`}>
+                <RotateCcw size={14} /> {t.tryAgain}
               </button>
               <button onClick={handleDownload}
-                className="flex-1 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-colors flex items-center justify-center gap-2">
+                className="flex-1 py-3.5 bg-white text-black rounded-2xl text-[12px] font-semibold hover:bg-white/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
                 <Download size={14} /> {t.download}
               </button>
             </div>
 
-            {/* Post-render feedback */}
+            {/* Feedback */}
             {!feedbackGiven && (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
-                <p className="text-sm font-black text-slate-700 text-center">{t.feedbackQuestion}</p>
+              <div className={`${glass} p-5 space-y-3`}>
+                <p className="text-[14px] font-semibold text-white/80 text-center">{t.feedbackQuestion}</p>
                 <div className="flex gap-3">
                   <button onClick={() => { setFeedbackGiven('liked'); setShowSizeOptions(true); }}
-                    className="flex-1 py-3 bg-emerald-50 border-2 border-emerald-200 rounded-xl text-xs font-black text-emerald-600 hover:bg-emerald-100 transition-all flex items-center justify-center gap-2">
-                    <ThumbsUp size={16} /> {t.feedbackYes}
+                    className="flex-1 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-[12px] font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2">
+                    <ThumbsUp size={14} /> {t.feedbackYes}
                   </button>
                   <button onClick={() => { setFeedbackGiven('disliked'); setShowSizeOptions(true); }}
-                    className="flex-1 py-3 bg-orange-50 border-2 border-orange-200 rounded-xl text-xs font-black text-orange-600 hover:bg-orange-100 transition-all flex items-center justify-center gap-2">
-                    <ThumbsDown size={16} /> {t.feedbackNo}
+                    className="flex-1 py-3 bg-orange-500/10 border border-orange-500/20 rounded-xl text-[12px] font-semibold text-orange-400 hover:bg-orange-500/20 transition-all flex items-center justify-center gap-2">
+                    <ThumbsDown size={14} /> {t.feedbackNo}
                   </button>
                 </div>
               </div>
             )}
 
-            {/* After feedback: size up/down quick options */}
+            {/* Size options after feedback */}
             {feedbackGiven && showSizeOptions && availableSizes.length > 1 && (
-              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 space-y-3">
-                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest text-center">{t.thanksFeedback}</p>
-                <p className="text-sm font-black text-indigo-700 text-center">{t.sizeQuestion}</p>
+              <div className={`${glass} p-5 space-y-4`}>
+                <p className="text-[14px] font-semibold text-white/80 text-center">{t.sizeQuestion}</p>
 
-                {/* Quick size up / size down buttons */}
                 {currentSize && (
                   <div className="flex gap-3">
                     {getSizeUpDown().down && (
                       <button onClick={() => handleSizeShift(getSizeUpDown().down!)}
                         disabled={isLoading}
-                        className="flex-1 py-3 bg-white border-2 border-indigo-200 rounded-xl text-xs font-black text-indigo-600 hover:bg-indigo-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                        <ArrowDown size={16} /> {t.sizeDown} ({getSizeUpDown().down})
+                        className={`flex-1 py-3 ${glass} ${glassHover} transition-all text-[12px] font-semibold text-white/60 flex items-center justify-center gap-2 disabled:opacity-30`}>
+                        <ArrowDown size={14} /> {t.sizeDown} ({getSizeUpDown().down})
                       </button>
                     )}
                     {getSizeUpDown().up && (
                       <button onClick={() => handleSizeShift(getSizeUpDown().up!)}
                         disabled={isLoading}
-                        className="flex-1 py-3 bg-white border-2 border-indigo-200 rounded-xl text-xs font-black text-indigo-600 hover:bg-indigo-100 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                        <ArrowUp size={16} /> {t.sizeUp} ({getSizeUpDown().up})
+                        className={`flex-1 py-3 ${glass} ${glassHover} transition-all text-[12px] font-semibold text-white/60 flex items-center justify-center gap-2 disabled:opacity-30`}>
+                        <ArrowUp size={14} /> {t.sizeUp} ({getSizeUpDown().up})
                       </button>
                     )}
                   </div>
                 )}
 
-                {/* Full size selector */}
                 <div className="space-y-2">
-                  <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{t.selectExactSize}</span>
-                  <div className="flex flex-wrap gap-1.5">
+                  <span className="text-[11px] font-semibold text-white/25 uppercase tracking-[0.08em]">{t.selectExactSize}</span>
+                  <div className="flex flex-wrap gap-2">
                     {availableSizes.filter(s => s !== currentSize).map((size) => (
                       <button key={size}
                         onClick={() => setPreviewSize(previewSize === size ? null : size)}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${
-                          previewSize === size ? 'bg-indigo-600 text-white' : 'bg-white border border-indigo-200 text-indigo-500 hover:border-indigo-400'
+                        className={`px-4 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
+                          previewSize === size
+                            ? 'bg-white text-black'
+                            : 'bg-white/[0.06] text-white/50 border border-white/[0.08] hover:bg-white/[0.12]'
                         }`}>
                         {size}
                       </button>
@@ -556,16 +534,18 @@ export default function EmbedPage() {
               </div>
             )}
 
-            {/* Post-render: try another color */}
+            {/* Color options */}
             {availableColors.length > 1 && (
-              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 space-y-2">
-                <span className="text-[10px] font-black text-amber-600">{t.tryOtherColor}</span>
-                <div className="flex flex-wrap gap-1.5">
+              <div className={`${glass} p-4 space-y-2.5`}>
+                <span className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.08em]">{t.tryOtherColor}</span>
+                <div className="flex flex-wrap gap-2">
                   {availableColors.map((color) => (
                     <button key={color}
                       onClick={() => setSelectedColor(selectedColor === color ? null : color)}
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${
-                        selectedColor === color ? 'bg-amber-600 text-white' : 'bg-white border border-amber-200 text-amber-600 hover:border-amber-400'
+                      className={`px-4 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
+                        selectedColor === color
+                          ? 'bg-white text-black'
+                          : 'bg-white/[0.06] text-white/50 border border-white/[0.08] hover:bg-white/[0.12]'
                       }`}>
                       {color}
                     </button>
@@ -574,10 +554,10 @@ export default function EmbedPage() {
               </div>
             )}
 
-            {/* Regenerate button */}
+            {/* Regenerate */}
             {(previewSize || selectedColor) && (
               <button id="agalaz-regenerate-btn" onClick={handleGenerate} disabled={isLoading}
-                className="w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                className="w-full py-4 bg-white text-black rounded-2xl text-[14px] font-semibold hover:bg-white/90 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-30">
                 {isLoading ? (
                   <><Loader2 size={16} className="animate-spin" /> {t.generating}</>
                 ) : (
@@ -590,9 +570,11 @@ export default function EmbedPage() {
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 border-t border-slate-100 px-4 py-1.5 text-center bg-white">
+      <div className="shrink-0 px-5 py-2.5 text-center">
         <a href="https://agalaz.com" target="_blank" rel="noopener noreferrer"
-          className="text-[8px] font-bold text-slate-200 hover:text-indigo-400 transition-colors">agalaz.com</a>
+          className="text-[10px] font-medium text-white/15 hover:text-white/40 transition-colors tracking-[0.02em]">
+          powered by agalaz
+        </a>
       </div>
 
       {/* Hidden file inputs */}
