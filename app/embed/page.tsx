@@ -450,6 +450,7 @@ export default function EmbedPage() {
                     <span>{t.generating}</span>
                   </div>
                   <span className="text-[11px] font-normal text-black/40">{t.loadingHint}</span>
+                  <span className="text-[10px] font-normal text-black/25 mt-1">Powered by agalaz.com</span>
                 </div>
               ) : (
                 <><Sparkles size={16} /> {t.generate}</>
@@ -468,9 +469,13 @@ export default function EmbedPage() {
                   <img src={resultImage!} alt="Try-on result" className="w-full" style={{ aspectRatio: '3 / 4', objectFit: 'cover' }} />
                   {isLoading && (
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                      <div className="flex flex-col items-center gap-2">
+                      <div className="flex flex-col items-center gap-3">
                         <Loader2 size={28} className="animate-spin text-white" />
                         <span className="text-[12px] text-white/60 font-medium">{t.generating}</span>
+                        <a href="https://agalaz.com" target="_blank" rel="noopener noreferrer"
+                          className="text-[10px] text-white/25 hover:text-white/40 transition-colors mt-2">
+                          Powered by agalaz.com
+                        </a>
                       </div>
                     </div>
                   )}

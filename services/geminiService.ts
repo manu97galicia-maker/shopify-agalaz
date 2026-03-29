@@ -53,17 +53,46 @@ export async function generateTryOnImage(
 
     const hasGarment = !!clothingImage;
     const hasSize = !!(currentSize || previewSize);
-    const sizeNote = hasSize
-      ? previewSize
-        ? ` Size: person is ${currentSize}, show garment as ${previewSize} (${
-            ['XS', 'S'].includes(previewSize) && ['L', 'XL', 'XXL', '3XL'].includes(currentSize || '')
-              ? 'tight/fitted'
-              : ['XL', 'XXL', '3XL'].includes(previewSize) && ['XS', 'S', 'M'].includes(currentSize || '')
-                ? 'oversized/loose'
-                : 'natural fit'
-          }).`
-        : ` Size ${currentSize}, natural fit.`
-      : '';
+
+    // Build detailed size instruction for Gemini
+    const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
+    function getSizeDiff(from: string, to: string): number {
+      const a = sizeOrder.indexOf(from), b = sizeOrder.indexOf(to);
+      if (a === -1 || b === -1) return 0;
+      return b - a;
+    }
+
+    let sizeNote = '';
+    if (hasSize && previewSize && currentSize && previewSize !== currentSize) {
+      const diff = getSizeDiff(currentSize, previewSize);
+      const absDiff = Math.abs(diff);
+      if (diff > 0) {
+        // Going bigger
+        sizeNote = `\n\nSIZE CHANGE (CRITICAL — make this VERY visible):
+The person wears ${currentSize} but wants to preview ${previewSize} (${absDiff} size${absDiff > 1 ? 's' : ''} LARGER).
+Show the garment as CLEARLY OVERSIZED:
+- Garment should be ${absDiff >= 2 ? 'dramatically' : 'noticeably'} wider and longer than the body
+- Sleeves should extend ${absDiff >= 2 ? 'well past the wrists' : 'past the wrists'}
+- Shoulders should drop ${absDiff >= 2 ? '3-4cm' : '1-2cm'} below natural shoulder line
+- Bottom hem should hang ${absDiff >= 2 ? 'significantly' : 'noticeably'} lower
+- Extra fabric should bunch, drape, and create visible folds
+- The garment should look like borrowing from someone much bigger
+DO NOT make it subtle — the size difference must be OBVIOUS at first glance.`;
+      } else {
+        // Going smaller
+        sizeNote = `\n\nSIZE CHANGE (CRITICAL — make this VERY visible):
+The person wears ${currentSize} but wants to preview ${previewSize} (${absDiff} size${absDiff > 1 ? 's' : ''} SMALLER).
+Show the garment as CLEARLY TOO TIGHT:
+- Fabric should be ${absDiff >= 2 ? 'extremely' : 'noticeably'} stretched and pulled across the body
+- Visible tension lines and pulling at seams
+- Sleeves should be ${absDiff >= 2 ? 'much' : 'noticeably'} shorter, ending above the wrists
+- Bottom hem should ride up, exposing more waist/hip area
+- The garment should look too small — like wearing a friend's smaller clothes
+DO NOT make it subtle — the size difference must be OBVIOUS at first glance.`;
+      }
+    } else if (hasSize && currentSize) {
+      sizeNote = ` Size ${currentSize}, natural fit.`;
+    }
     const categoryHint = category && category !== 'auto'
       ? `\nUSER SELECTED CATEGORY: ${category.toUpperCase()}. IMG2 is a ${category} item — apply it as such.`
       : '';
@@ -103,7 +132,7 @@ QUALITY RULES:
 1. Result must look like a real photograph — proper shadows, wrinkles, fabric texture, light interaction
 2. Fabric must follow body contours naturally — no floating or flat-looking garments
 3. Keep ALL items that are NOT being replaced (other clothing, accessories, background objects)
-4. Colors and patterns from IMG2 must be preserved exactly${hasSize ? '\n5. Adjust garment fit to match specified size — show realistic draping for the size' : ''}
+4. Colors and patterns from IMG2 must be preserved exactly${previewSize && currentSize && previewSize !== currentSize ? '\n5. SIZE FIT IS THE #1 PRIORITY — the garment MUST look visibly different from a normal fit' : ''}
 
 You MUST output exactly one photorealistic image.`;
     } else {
