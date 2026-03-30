@@ -601,7 +601,7 @@ export default function EmbedPage() {
       </div>
 
       {/* Hidden file inputs — capture for mobile camera */}
-      <input ref={userRef} type="file" accept="image/*" capture="environment" onChange={handleFile(setUserImage)} className="hidden" />
+      <input ref={userRef} type="file" accept="image/*" onChange={handleFile(setUserImage)} className="hidden" />
       <input ref={garmentRef} type="file" accept="image/*" onChange={handleFile(setGarmentImage)} className="hidden" />
     </div>
   );
