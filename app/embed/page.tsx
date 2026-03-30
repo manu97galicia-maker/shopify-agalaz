@@ -326,7 +326,7 @@ export default function EmbedPage() {
     <div className="min-h-screen bg-black flex flex-col" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif' }}>
 
       {/* Header */}
-      <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+      <div className="px-4 md:px-5 pt-4 md:pt-5 pb-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
             <Sparkles size={14} className="text-white" />
@@ -340,7 +340,7 @@ export default function EmbedPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-5 pb-6">
+      <div className="flex-1 overflow-y-auto px-4 md:px-5 pb-6">
         {step === 'upload' ? (
           <div className="max-w-sm mx-auto space-y-5 pt-2">
             <p className="text-center text-white/40 text-[13px] font-light tracking-[-0.01em]">{t.subtitle}</p>
@@ -419,7 +419,7 @@ export default function EmbedPage() {
                   {availableSizes.map((size) => (
                     <button key={size}
                       onClick={() => setCurrentSize(currentSize === size ? null : size)}
-                      className={`px-4 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
+                      className={`px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center ${
                         currentSize === size
                           ? 'bg-white text-black'
                           : 'bg-white/[0.06] text-white/50 border border-white/[0.08] hover:bg-white/[0.12] hover:text-white/70'
@@ -466,7 +466,7 @@ export default function EmbedPage() {
               {/* Left: Image */}
               <div className="md:w-1/2 shrink-0">
                 <div className="rounded-2xl overflow-hidden ring-1 ring-white/[0.08] relative">
-                  <img src={resultImage!} alt="Try-on result" className="w-full" style={{ aspectRatio: '3 / 4', objectFit: 'cover' }} />
+                  <img src={resultImage!} alt="Try-on result" className="w-full max-h-[60vh] md:max-h-none object-cover" style={{ aspectRatio: '3 / 4' }} />
                   {isLoading && (
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
                       <div className="flex flex-col items-center gap-3">
@@ -542,7 +542,7 @@ export default function EmbedPage() {
                         {availableSizes.filter(s => s !== currentSize).map((size) => (
                           <button key={size}
                             onClick={() => setPreviewSize(previewSize === size ? null : size)}
-                            className={`px-4 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
+                            className={`px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center ${
                               previewSize === size
                                 ? 'bg-white text-black'
                                 : 'bg-white/[0.06] text-white/50 border border-white/[0.08] hover:bg-white/[0.12]'
@@ -563,7 +563,7 @@ export default function EmbedPage() {
                       {availableColors.map((color) => (
                         <button key={color}
                           onClick={() => setSelectedColor(selectedColor === color ? null : color)}
-                          className={`px-4 py-2 rounded-xl text-[12px] font-semibold transition-all duration-200 ${
+                          className={`px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center ${
                             selectedColor === color
                               ? 'bg-white text-black'
                               : 'bg-white/[0.06] text-white/50 border border-white/[0.08] hover:bg-white/[0.12]'
@@ -600,8 +600,8 @@ export default function EmbedPage() {
         </a>
       </div>
 
-      {/* Hidden file inputs */}
-      <input ref={userRef} type="file" accept="image/*" onChange={handleFile(setUserImage)} className="hidden" />
+      {/* Hidden file inputs — capture for mobile camera */}
+      <input ref={userRef} type="file" accept="image/*" capture="environment" onChange={handleFile(setUserImage)} className="hidden" />
       <input ref={garmentRef} type="file" accept="image/*" onChange={handleFile(setGarmentImage)} className="hidden" />
     </div>
   );

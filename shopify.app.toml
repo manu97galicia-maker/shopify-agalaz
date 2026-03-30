@@ -1,27 +1,27 @@
-# Agalaz Virtual Try-On — Shopify App Configuration
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-name = "Agalaz Virtual Try-On"
 client_id = "7523a3b92a09addee08857ff2f4e55f7"
+name = "Agalaz Virtual Try-On"
 application_url = "https://shopify-agalaz-tryon.vercel.app"
 embedded = true
-
-[access_scopes]
-scopes = "read_products,read_themes,write_themes"
-
-[auth]
-redirect_urls = ["https://shopify-agalaz-tryon.vercel.app/api/auth/callback"]
 
 [webhooks]
 api_version = "2024-10"
 
   [[webhooks.subscriptions]]
-  topics = ["app/uninstalled"]
+  uri = "/api/webhooks/gdpr"
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
   uri = "/api/webhooks/app-uninstalled"
 
-[webhooks.privacy_compliance]
-customer_data_request_url = "https://shopify-agalaz-tryon.vercel.app/api/webhooks/gdpr"
-customer_deletion_url = "https://shopify-agalaz-tryon.vercel.app/api/webhooks/gdpr"
-shop_deletion_url = "https://shopify-agalaz-tryon.vercel.app/api/webhooks/gdpr"
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,read_themes,write_themes"
+
+[auth]
+redirect_urls = [ "https://shopify-agalaz-tryon.vercel.app/api/auth/callback" ]
 
 [app_proxy]
 url = "https://shopify-agalaz-tryon.vercel.app/api/proxy"
