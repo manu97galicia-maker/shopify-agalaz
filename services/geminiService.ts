@@ -67,28 +67,41 @@ export async function generateTryOnImage(
       const diff = getSizeDiff(currentSize, previewSize);
       const absDiff = Math.abs(diff);
       if (diff > 0) {
-        // Going bigger
-        sizeNote = `\n\nSIZE CHANGE (CRITICAL — make this VERY visible):
-The person wears ${currentSize} but wants to preview ${previewSize} (${absDiff} size${absDiff > 1 ? 's' : ''} LARGER).
-Show the garment as CLEARLY OVERSIZED:
-- Garment should be ${absDiff >= 2 ? 'dramatically' : 'noticeably'} wider and longer than the body
-- Sleeves should extend ${absDiff >= 2 ? 'well past the wrists' : 'past the wrists'}
-- Shoulders should drop ${absDiff >= 2 ? '3-4cm' : '1-2cm'} below natural shoulder line
-- Bottom hem should hang ${absDiff >= 2 ? 'significantly' : 'noticeably'} lower
-- Extra fabric should bunch, drape, and create visible folds
-- The garment should look like borrowing from someone much bigger
-DO NOT make it subtle — the size difference must be OBVIOUS at first glance.`;
+        // Going bigger — realistic and proportional
+        const intensity = absDiff === 1 ? 'slightly' : absDiff === 2 ? 'noticeably' : 'significantly';
+        sizeNote = `\n\nSIZE PREVIEW: Person normally wears ${currentSize}, showing how ${previewSize} would fit (${absDiff} size${absDiff > 1 ? 's' : ''} larger).
+Make the fit look REALISTICALLY ${intensity} looser:
+${absDiff === 1 ? `- Just a bit more relaxed than perfect fit — slightly more room in the torso and sleeves
+- Shoulders sit about 0.5-1cm wider than ideal
+- Hem drops about 1-2cm lower
+- Subtle extra fabric but still looks intentional, like a "relaxed fit"` :
+absDiff === 2 ? `- Clearly roomier — visible extra space around torso
+- Shoulders drop 1-2cm past natural shoulder line
+- Sleeves a bit longer than ideal, some fabric gathering
+- Hem noticeably lower, garment looks borrowed from someone a bit bigger` :
+`- Obviously too large — garment hangs loosely on the body
+- Shoulders drop well past natural line, sleeves extend past wrists
+- Significant extra fabric, visible draping and bunching
+- Looks like wearing someone much larger's clothing`}
+Keep it realistic — this is how real clothing in size ${previewSize} looks on a ${currentSize} body.`;
       } else {
-        // Going smaller
-        sizeNote = `\n\nSIZE CHANGE (CRITICAL — make this VERY visible):
-The person wears ${currentSize} but wants to preview ${previewSize} (${absDiff} size${absDiff > 1 ? 's' : ''} SMALLER).
-Show the garment as CLEARLY TOO TIGHT:
-- Fabric should be ${absDiff >= 2 ? 'extremely' : 'noticeably'} stretched and pulled across the body
-- Visible tension lines and pulling at seams
-- Sleeves should be ${absDiff >= 2 ? 'much' : 'noticeably'} shorter, ending above the wrists
-- Bottom hem should ride up, exposing more waist/hip area
-- The garment should look too small — like wearing a friend's smaller clothes
-DO NOT make it subtle — the size difference must be OBVIOUS at first glance.`;
+        // Going smaller — realistic and proportional
+        const intensity = absDiff === 1 ? 'slightly' : absDiff === 2 ? 'noticeably' : 'significantly';
+        sizeNote = `\n\nSIZE PREVIEW: Person normally wears ${currentSize}, showing how ${previewSize} would fit (${absDiff} size${absDiff > 1 ? 's' : ''} smaller).
+Make the fit look REALISTICALLY ${intensity} tighter:
+${absDiff === 1 ? `- Just a bit snugger than perfect fit — fabric sits closer to the body
+- Slight tension across chest/shoulders, nothing extreme
+- Sleeves end about 1cm shorter than ideal
+- Hem sits slightly higher, shows a tiny bit more waist
+- Still wearable, just clearly fitted/snug` :
+absDiff === 2 ? `- Clearly too tight — visible pulling at seams and across chest
+- Fabric stretched, outline of body more visible
+- Sleeves noticeably short, ending well above wrists
+- Hem rides up, restricted movement visible` :
+`- Obviously too small — extreme tightness, fabric straining
+- Very restricted, garment barely fits
+- Sleeves much too short, hem way too high`}
+Keep it realistic — this is how real clothing in size ${previewSize} looks on a ${currentSize} body.`;
       }
     } else if (hasSize && currentSize) {
       sizeNote = ` Size ${currentSize}, natural fit.`;
