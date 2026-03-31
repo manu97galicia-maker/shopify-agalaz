@@ -23,6 +23,26 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
 
+      // Credits pack purchase (one-time payment)
+      const clientRefId = session.client_reference_id;
+      if (clientRefId && session.mode === 'payment') {
+        const { data: partner } = await admin
+          .from('partners')
+          .select('id, credits_remaining')
+          .eq('id', clientRefId)
+          .single();
+
+        if (partner) {
+          await admin.from('partners').update({
+            credits_remaining: partner.credits_remaining + 20,
+            updated_at: new Date().toISOString(),
+          }).eq('id', partner.id);
+
+          console.log(`Credits pack purchased: +20 credits for partner ${partner.id} (now ${partner.credits_remaining + 20})`);
+        }
+        break;
+      }
+
       // Partner subscription activated
       if (session.metadata?.type === 'partner_subscription') {
         const partnerId = session.metadata.partner_id;

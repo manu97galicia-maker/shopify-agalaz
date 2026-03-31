@@ -9,6 +9,10 @@ const PLANS = [
   { id: 'growth', name: 'Growth', price: 499, renders: 1000, extra: '0.50', features: ['1,000 renders/month', 'Customizable widget'], popular: true },
 ];
 
+const CREDITS_PACK_URL = 'https://buy.stripe.com/fZu6oHfZk1VC4BL8KJfYY0h';
+const CREDITS_PACK_AMOUNT = 20;
+const CREDITS_PACK_PRICE = '9.99€';
+
 interface PartnerProfile {
   id: string;
   store_name: string;
@@ -319,6 +323,50 @@ function DashboardContent() {
             </p>
           </div>
         </div>
+
+        {/* ─── Buy Extra Credits + Upgrade (for paid plans) ─── */}
+        {isPaid && (
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Buy credits pack */}
+            <div className="p-5 border border-indigo-200 bg-indigo-50 rounded-2xl space-y-3">
+              <div className="flex items-center gap-2">
+                <Zap size={16} className="text-indigo-600" />
+                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Extra Credits</span>
+              </div>
+              <p className="text-sm text-slate-700">
+                Need more renders? Buy <strong>{CREDITS_PACK_AMOUNT} extra credits</strong> for {CREDITS_PACK_PRICE}.
+              </p>
+              <a
+                href={`${CREDITS_PACK_URL}?client_reference_id=${profile.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors"
+              >
+                <Zap size={14} /> Buy {CREDITS_PACK_AMOUNT} Credits — {CREDITS_PACK_PRICE}
+              </a>
+            </div>
+
+            {/* Upgrade from Starter to Growth */}
+            {profile.plan === 'starter' && (
+              <div className="p-5 border border-amber-200 bg-amber-50 rounded-2xl space-y-3">
+                <div className="flex items-center gap-2">
+                  <BarChart3 size={16} className="text-amber-600" />
+                  <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Upgrade Plan</span>
+                </div>
+                <p className="text-sm text-slate-700">
+                  Go from <strong>200 → 1,000 renders/month</strong> with the Growth plan.
+                </p>
+                <button
+                  onClick={() => { setSelectedPlan('growth'); handleSubscribe(); }}
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition-colors disabled:opacity-50"
+                >
+                  <BarChart3 size={14} /> Upgrade to Growth — €499/month
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ─── Paywall (when trial ends) ─── */}
         {showPaywall && (
