@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       // Check if partner subscription
       const { data: partner } = await admin
         .from('partners')
-        .select('id, plan')
+        .select('id, plan, credits_remaining')
         .eq('stripe_subscription_id', subscriptionId)
         .single();
 
@@ -83,15 +83,15 @@ export async function POST(req: NextRequest) {
         // Skip first invoice
         if (invoice.billing_reason === 'subscription_create') break;
 
-        // Monthly renewal — recharge credits
-        const credits = partner.plan === 'growth' ? 1000 : 200;
+        // Monthly renewal — ADD credits to existing balance (accumulate extras)
+        const monthlyCredits = partner.plan === 'growth' ? 1000 : 200;
         await admin.from('partners').update({
-          credits_remaining: credits,
+          credits_remaining: partner.credits_remaining + monthlyCredits,
           is_active: true,
           updated_at: new Date().toISOString(),
         }).eq('id', partner.id);
 
-        console.log(`Partner credits recharged: ${partner.id} (${partner.plan}, ${credits} credits)`);
+        console.log(`Partner credits recharged: ${partner.id} (${partner.plan}, +${monthlyCredits}, now ${partner.credits_remaining + monthlyCredits})`);
       }
       break;
     }
