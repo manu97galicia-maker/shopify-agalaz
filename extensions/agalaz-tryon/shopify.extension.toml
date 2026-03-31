@@ -10,3 +10,8 @@ handle = "agalaz-tryon"
   type = "app-block"
   name = "Virtual Try-On Button"
   file = "blocks/tryon-button.liquid"
+
+  [[extensions.blocks]]
+  type = "app-embed"
+  name = "Virtual Try-On (Auto)"
+  file = "blocks/tryon-embed.liquid"
