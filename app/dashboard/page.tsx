@@ -39,6 +39,17 @@ export default function DashboardPage() {
   );
 }
 
+// Helper to get session token from App Bridge
+async function getShopifySessionToken(): Promise<string | null> {
+  try {
+    const w = window as any;
+    if (w.shopify?.idToken) {
+      return await w.shopify.idToken();
+    }
+  } catch {}
+  return null;
+}
+
 function DashboardContent() {
   const searchParams = useSearchParams();
   const isNew = searchParams.get('new') === 'true';
@@ -59,6 +70,7 @@ function DashboardContent() {
     }
     return '';
   });
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
 
   const [profile, setProfile] = useState<PartnerProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,6 +80,32 @@ function DashboardContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  // Initialize App Bridge session token
+  useEffect(() => {
+    async function initSessionToken() {
+      // Wait for App Bridge to load
+      const maxWait = 3000;
+      const start = Date.now();
+      while (Date.now() - start < maxWait) {
+        const token = await getShopifySessionToken();
+        if (token) {
+          setSessionToken(token);
+          // Extract shop from token payload
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.dest) {
+              const match = payload.dest.match(/([^/]+\.myshopify\.com)/);
+              if (match && !shop) setShop(match[1]);
+            }
+          } catch {}
+          break;
+        }
+        await new Promise(r => setTimeout(r, 200));
+      }
+    }
+    initSessionToken();
+  }, []);
 
   // Try to detect shop from URL on client side
   useEffect(() => {
@@ -107,7 +145,12 @@ function DashboardContent() {
 
   async function loadProfile() {
     try {
-      const res = await fetch(`/api/partners/profile?shop=${encodeURIComponent(shop)}`);
+      // Refresh session token if available
+      const token = await getShopifySessionToken();
+      if (token) setSessionToken(token);
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const res = await fetch(`/api/partners/profile?shop=${encodeURIComponent(shop)}`, { headers });
       if (res.ok) {
         const data = await res.json();
         setProfile(data.partner);
@@ -162,9 +205,12 @@ function DashboardContent() {
     setIsSubmitting(true);
     setError(null);
     try {
+      const token = await getShopifySessionToken();
+      const authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) authHeaders['Authorization'] = `Bearer ${token}`;
       const res = await fetch(`/api/partners/checkout?shop=${encodeURIComponent(shop)}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({
           plan: selectedPlan,
           partnerId: profile.id,
