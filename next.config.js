@@ -1,13 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // CSP headers are handled by middleware.ts for /dashboard and /embed
-  // This only sets defaults for other routes
   async headers() {
     return [
       {
-        source: '/api/:path*',
+        source: '/:path*',
         headers: [
-          { key: 'Access-Control-Allow-Origin', value: '*' },
+          {
+            key: 'Content-Security-Policy',
+            value: 'frame-ancestors https://*.myshopify.com https://admin.shopify.com https://*.shopify.com *;',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'ALLOWALL',
+          },
         ],
       },
     ];
