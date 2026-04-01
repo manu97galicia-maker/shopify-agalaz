@@ -284,335 +284,215 @@ function DashboardContent() {
   const isPaid = profile.has_subscription;
   const hasCredits = profile.credits_remaining > 0;
   const showPaywall = !isPaid && !hasCredits;
+  const creditsPercent = Math.min(100, (profile.credits_remaining / (profile.credits_monthly_limit || 5)) * 100);
+  const creditsLow = creditsPercent < 20;
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="border-b border-slate-100">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Sparkles size={20} className="text-indigo-600" />
-            <span className="font-serif text-lg font-black text-slate-900 tracking-tight">AGALAZ</span>
-            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] font-black uppercase tracking-widest rounded-full">
-              {profile.plan}
+    <div className="min-h-screen bg-slate-50">
+      {/* Header — clean Shopify-embedded style */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-3xl mx-auto px-5 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
+              <Sparkles size={14} className="text-white" />
+            </div>
+            <span className="text-sm font-bold text-slate-900">Agalaz Virtual Try-On</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
+              isPaid ? 'bg-indigo-50 text-indigo-600' : hasCredits ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+            }`}>
+              {isPaid ? profile.plan : hasCredits ? 'Trial' : 'No credits'}
             </span>
           </div>
-          <span className="text-xs text-slate-400 font-bold">{profile.store_name}</span>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
+      <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
 
-        {/* ─── Welcome Banner (new installs or auto-setup) ─── */}
+        {/* ─── Welcome Banner (first install) ─── */}
         {apiKey && (
-          <div className="p-6 bg-emerald-50 border-2 border-emerald-200 rounded-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center">
-                <Check size={20} className="text-white" />
-              </div>
-              <div>
-                <h2 className="font-black text-emerald-900 text-lg">App Installed Successfully!</h2>
-                <p className="text-emerald-600 text-xs">Your store is ready with 5 free try-on renders.</p>
-              </div>
+          <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-3">
+            <div className="flex items-center gap-2.5">
+              <Check size={18} className="text-emerald-600" />
+              <span className="font-bold text-emerald-900">App installed! 5 free renders ready.</span>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">
-                Your API Key (save it now — shown only once)
-              </label>
-              <div className="flex gap-2">
-                <code className="flex-1 px-4 py-3 bg-white border border-emerald-200 rounded-xl text-sm font-mono text-emerald-900 break-all">
+            <div>
+              <label className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Your API Key (copy it now)</label>
+              <div className="flex gap-2 mt-1">
+                <code className="flex-1 px-3 py-2 bg-white border border-emerald-200 rounded-lg text-xs font-mono text-emerald-900 break-all">
                   {apiKey}
                 </code>
-                <button
-                  onClick={() => copyToClipboard(apiKey, 'apikey')}
-                  className="px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors"
-                >
-                  {copied === 'apikey' ? <Check size={16} /> : <Copy size={16} />}
+                <button onClick={() => copyToClipboard(apiKey, 'apikey')}
+                  className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
+                  {copied === 'apikey' ? <Check size={14} /> : <Copy size={14} />}
                 </button>
               </div>
-              <p className="text-[10px] text-emerald-500">
-                This key is used by the theme extension to authenticate try-on requests.
-              </p>
             </div>
           </div>
         )}
 
-        {/* ─── Credits Overview ─── */}
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="p-5 border border-slate-200 rounded-2xl space-y-2">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Credits Remaining</span>
-            <p className="font-serif text-3xl font-black text-slate-900">{profile.credits_remaining}</p>
-            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-indigo-600 rounded-full transition-all"
-                style={{ width: `${Math.min(100, (profile.credits_remaining / (profile.credits_monthly_limit || 5)) * 100)}%` }}
-              />
+        {/* ─── Stats Row ─── */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Credits</p>
+            <p className={`text-2xl font-black mt-1 ${creditsLow ? 'text-red-600' : 'text-slate-900'}`}>
+              {profile.credits_remaining}
+            </p>
+            <div className="h-1 bg-slate-100 rounded-full mt-2 overflow-hidden">
+              <div className={`h-full rounded-full transition-all ${creditsLow ? 'bg-red-500' : 'bg-indigo-600'}`}
+                style={{ width: `${creditsPercent}%` }} />
             </div>
-            <p className="text-[10px] text-slate-300">of {profile.credits_monthly_limit} {isPaid ? '/month' : 'free trial'}</p>
           </div>
-
-          <div className="p-5 border border-slate-200 rounded-2xl space-y-2">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Renders</span>
-            <p className="font-serif text-3xl font-black text-slate-900">{profile.total_renders || 0}</p>
-            <p className="text-[10px] text-slate-300">all-time generations</p>
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Renders</p>
+            <p className="text-2xl font-black text-slate-900 mt-1">{profile.total_renders || 0}</p>
+            <p className="text-[10px] text-slate-300 mt-2">all time</p>
           </div>
-
-          <div className="p-5 border border-slate-200 rounded-2xl space-y-2">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</span>
-            <div className="flex items-center gap-2">
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</p>
+            <div className="flex items-center gap-1.5 mt-1">
               <div className={`w-2 h-2 rounded-full ${profile.is_active ? 'bg-emerald-500' : 'bg-red-500'}`} />
-              <p className="font-black text-slate-900">{profile.is_active ? 'Active' : 'Inactive'}</p>
+              <span className="text-sm font-bold text-slate-900">{profile.is_active ? 'Active' : 'Off'}</span>
             </div>
-            <p className="text-[10px] text-slate-300">
-              {isPaid ? `${profile.plan} plan` : hasCredits ? 'Free trial' : 'No credits'}
+            <p className="text-[10px] text-slate-300 mt-2">
+              {profile.api_key_prefix && profile.api_key_prefix !== 'pending'
+                ? <span>Key: <code className="font-mono">{profile.api_key_prefix}...</code></span>
+                : 'No key'
+              }
             </p>
           </div>
         </div>
 
-        {/* ─── Buy Extra Credits + Upgrade (for paid plans) ─── */}
+        {/* ─── Quick Actions ─── */}
         {isPaid && (
-          <div className="grid md:grid-cols-2 gap-4">
-            {/* Buy credits pack */}
-            <div className="p-5 border border-indigo-200 bg-indigo-50 rounded-2xl space-y-3">
-              <div className="flex items-center gap-2">
+          <div className="flex gap-3">
+            <a href={`${CREDITS_PACK_URL}?client_reference_id=${profile.id}`}
+              target="_blank" rel="noopener noreferrer"
+              className="flex-1 p-4 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 transition-all flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
                 <Zap size={16} className="text-indigo-600" />
-                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Extra Credits</span>
               </div>
-              <p className="text-sm text-slate-700">
-                Need more renders? Buy <strong>{CREDITS_PACK_AMOUNT} extra credits</strong> for {CREDITS_PACK_PRICE}.
-              </p>
-              <a
-                href={`${CREDITS_PACK_URL}?client_reference_id=${profile.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors"
-              >
-                <Zap size={14} /> Buy {CREDITS_PACK_AMOUNT} Credits — {CREDITS_PACK_PRICE}
-              </a>
-            </div>
-
-            {/* Upgrade from Starter to Growth */}
+              <div>
+                <p className="text-sm font-bold text-slate-900">Buy {CREDITS_PACK_AMOUNT} credits</p>
+                <p className="text-[10px] text-slate-400">{CREDITS_PACK_PRICE} one-time</p>
+              </div>
+            </a>
             {profile.plan === 'starter' && (
-              <div className="p-5 border border-amber-200 bg-amber-50 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2">
+              <button onClick={() => { setSelectedPlan('growth'); handleSubscribe(); }}
+                disabled={isSubmitting}
+                className="flex-1 p-4 bg-white border border-slate-200 rounded-xl hover:border-amber-300 transition-all flex items-center gap-3 disabled:opacity-50">
+                <div className="w-9 h-9 rounded-lg bg-amber-50 flex items-center justify-center shrink-0">
                   <BarChart3 size={16} className="text-amber-600" />
-                  <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Upgrade Plan</span>
                 </div>
-                <p className="text-sm text-slate-700">
-                  Go from <strong>200 → 1,000 renders/month</strong> with the Growth plan.
-                </p>
-                <button
-                  onClick={() => { setSelectedPlan('growth'); handleSubscribe(); }}
-                  disabled={isSubmitting}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition-colors disabled:opacity-50"
-                >
-                  <BarChart3 size={14} /> Upgrade to Growth — €499/month
-                </button>
-              </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-slate-900">Upgrade to Growth</p>
+                  <p className="text-[10px] text-slate-400">1,000 renders/mo</p>
+                </div>
+              </button>
             )}
           </div>
         )}
 
-        {/* ─── Paywall (when trial ends) ─── */}
+        {/* ─── Paywall ─── */}
         {showPaywall && (
-          <div className="p-8 border-2 border-amber-300 bg-amber-50 rounded-2xl space-y-6">
-            <div className="text-center space-y-2">
-              <Zap size={28} className="text-amber-500 mx-auto" />
-              <h2 className="font-serif text-2xl font-black text-slate-900">Trial Ended</h2>
-              <p className="text-slate-500 text-sm">Your 5 free renders have been used. Subscribe to keep the try-on widget active.</p>
+          <div className="bg-white border-2 border-amber-300 rounded-xl p-6 space-y-5">
+            <div className="text-center space-y-1">
+              <Zap size={24} className="text-amber-500 mx-auto" />
+              <h2 className="text-lg font-black text-slate-900">Free trial ended</h2>
+              <p className="text-slate-400 text-sm">Subscribe to reactivate the try-on button.</p>
             </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {PLANS.map((plan) => (
-                <button
-                  key={plan.id}
-                  onClick={() => setSelectedPlan(plan.id)}
-                  className={`relative p-6 rounded-xl border-2 text-left transition-all ${
-                    selectedPlan === plan.id
-                      ? 'border-indigo-600 bg-indigo-50'
-                      : 'border-slate-200 hover:border-indigo-300'
-                  }`}
-                >
+                <button key={plan.id} onClick={() => setSelectedPlan(plan.id)}
+                  className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                    selectedPlan === plan.id ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 hover:border-indigo-300'
+                  }`}>
                   {plan.popular && (
-                    <div className="absolute -top-2.5 right-4 px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black uppercase tracking-widest rounded-full">
-                      Popular
-                    </div>
+                    <div className="absolute -top-2 right-3 px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black uppercase rounded-full">Popular</div>
                   )}
-                  <h3 className="font-black text-slate-900">{plan.name}</h3>
-                  <div className="flex items-baseline gap-1 mt-1">
-                    <span className="font-serif text-2xl font-black text-slate-900">€{plan.price}</span>
-                    <span className="text-slate-400 text-xs">/month</span>
-                  </div>
-                  <p className="text-xs text-indigo-600 font-bold mt-1">{plan.renders} renders/month</p>
-                  <ul className="mt-3 space-y-1">
-                    {plan.features.map((f, i) => (
-                      <li key={i} className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                        <Check size={12} className="text-emerald-500" /> {f}
-                      </li>
-                    ))}
-                  </ul>
+                  <p className="font-black text-slate-900">{plan.name}</p>
+                  <p className="text-xl font-black text-slate-900 mt-1">${plan.price === 150 ? '149' : '499'}<span className="text-xs font-normal text-slate-400">/mo</span></p>
+                  <p className="text-xs text-indigo-600 font-bold mt-1">{plan.renders} renders/mo</p>
                 </button>
               ))}
             </div>
-
-            {error && (
-              <p className="text-sm text-red-600 font-bold text-center">{error}</p>
-            )}
-
-            <button
-              onClick={handleSubscribe}
-              disabled={isSubmitting}
-              className="w-full py-4 bg-slate-900 text-white rounded-xl font-black uppercase tracking-[0.15em] text-xs hover:bg-indigo-600 transition-colors disabled:opacity-50"
-            >
-              {isSubmitting ? 'Redirecting to Stripe...' : `Subscribe to ${selectedPlan === 'growth' ? 'Growth' : 'Starter'}`}
+            {error && <p className="text-sm text-red-600 font-bold text-center">{error}</p>}
+            <button onClick={handleSubscribe} disabled={isSubmitting}
+              className="w-full py-3.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-indigo-600 transition-colors disabled:opacity-50">
+              {isSubmitting ? 'Redirecting...' : `Subscribe to ${selectedPlan === 'growth' ? 'Growth' : 'Starter'}`}
             </button>
           </div>
         )}
 
-        {/* ─── Integration Guide ─── */}
-        <div className="space-y-6">
-          <h2 className="font-serif text-2xl font-black text-slate-900">Setup Guide</h2>
-
-          {/* Step 1: Theme Extension */}
-          <div className="p-6 border border-slate-200 rounded-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">1</div>
-              <h3 className="font-black text-slate-900">Enable the Theme Extension</h3>
-            </div>
-            <p className="text-sm text-slate-500 pl-11">
-              Go to your Shopify admin → <strong>Online Store → Themes → Customize</strong>.
-              Add the <strong>"Agalaz Virtual Try-On"</strong> block to your product page template.
-              The try-on button will appear automatically on all product pages.
-            </p>
-            <div className="pl-11">
-              <a
-                href={`https://${shop}/admin/themes/current/editor`}
-                target="_top"
-                className="inline-flex items-center gap-2 text-xs text-indigo-600 font-bold hover:text-indigo-800"
-              >
-                Open Theme Editor <ExternalLink size={12} />
-              </a>
-            </div>
+        {/* ─── Setup Guide (concise) ─── */}
+        <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+          <div className="p-4">
+            <h2 className="font-bold text-slate-900">Quick Setup</h2>
           </div>
-
-          {/* Step 2: API Key */}
-          <div className="p-6 border border-slate-200 rounded-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">2</div>
-              <h3 className="font-black text-slate-900">Configure API Key in Theme</h3>
+          <a href={`https://${shop}/admin/themes/current/editor`} target="_top"
+            className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
+            <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black shrink-0">1</div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-slate-900">Enable theme extension</p>
+              <p className="text-xs text-slate-400">Theme Editor → App Embeds → Agalaz Virtual Try-On → activate</p>
             </div>
-            <p className="text-sm text-slate-500 pl-11">
-              In the theme editor, click on the Agalaz block and paste your API key.
-              {profile.api_key_prefix && profile.api_key_prefix !== 'pending' && (
-                <span> Your key starts with: <code className="px-1.5 py-0.5 bg-slate-100 rounded text-xs font-mono">{profile.api_key_prefix}...</code></span>
-              )}
-            </p>
-          </div>
-
-          {/* Step 3: Test */}
-          <div className="p-6 border border-slate-200 rounded-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black">3</div>
-              <h3 className="font-black text-slate-900">Test It</h3>
-            </div>
-            <p className="text-sm text-slate-500 pl-11">
-              Visit any product page on your store. You should see the "Try it on with AI" button.
-              Click it, upload a photo, and watch the AI generate a virtual try-on!
-            </p>
-            <div className="pl-11">
-              <a
-                href={`https://${shop}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-xs text-indigo-600 font-bold hover:text-indigo-800"
-              >
-                Visit Your Store <ExternalLink size={12} />
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* ─── Alternative: Widget.js Integration ─── */}
-        <div className="space-y-4">
-          <h2 className="font-serif text-xl font-black text-slate-900">Alternative: Manual Widget Integration</h2>
-          <p className="text-sm text-slate-400">
-            If you prefer to add the widget manually instead of using the theme extension:
-          </p>
-
-          <div className="space-y-3">
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">1. Add to theme.liquid &lt;head&gt;</label>
-              <div className="relative mt-1">
-                <pre className="p-4 bg-slate-900 text-emerald-400 rounded-xl text-xs overflow-x-auto">
-{`<script src="${process.env.NEXT_PUBLIC_APP_URL || 'https://your-app.vercel.app'}/widget.js"
-  data-api-key="${apiKey || profile.api_key_prefix + '...' || 'YOUR_API_KEY'}">
-</script>`}
-                </pre>
-                <button
-                  onClick={() => copyToClipboard(`<script src="${process.env.NEXT_PUBLIC_APP_URL || 'https://your-app.vercel.app'}/widget.js" data-api-key="${apiKey || 'YOUR_API_KEY'}"></script>`, 'script')}
-                  className="absolute top-2 right-2 p-1.5 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors"
-                >
-                  {copied === 'script' ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} className="text-slate-400" />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">2. Add to product template</label>
-              <div className="relative mt-1">
-                <pre className="p-4 bg-slate-900 text-emerald-400 rounded-xl text-xs overflow-x-auto">
-{`<div id="agalaz-tryon"
-  data-garment="{{ product.featured_image | image_url: width: 512 }}">
-</div>`}
-                </pre>
-                <button
-                  onClick={() => copyToClipboard('<div id="agalaz-tryon" data-garment="{{ product.featured_image | image_url: width: 512 }}"></div>', 'div')}
-                  className="absolute top-2 right-2 p-1.5 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors"
-                >
-                  {copied === 'div' ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} className="text-slate-400" />}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ─── FAQ ─── */}
-        <div className="space-y-4">
-          <h2 className="font-serif text-xl font-black text-slate-900">FAQ</h2>
-          <div className="space-y-2">
-            {[
-              { q: 'How does the free trial work?', a: 'You get 5 free virtual try-on renders. Each time a customer generates a try-on, 1 credit is consumed. No credit card required for the trial.' },
-              { q: 'What happens when credits run out?', a: 'The try-on button stops working until you subscribe to a plan. Your existing data and API key are preserved.' },
-              { q: 'What items can customers try on?', a: 'Clothing, glasses, jewelry, hats, shoes, bags, and even tattoos or nail art. The AI detects the item type automatically from the product image.' },
-              { q: 'Do you store customer photos?', a: 'No. Customer images are processed in real-time and never stored. Zero data retention policy.' },
-              { q: 'How fast is the rendering?', a: 'Average render time is 10-30 seconds depending on image quality.' },
-              { q: 'Can I cancel anytime?', a: 'Yes. Monthly subscriptions can be cancelled anytime from your Stripe billing portal.' },
-            ].map((faq, i) => (
-              <div key={i} className="border border-slate-200 rounded-xl overflow-hidden">
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 transition-colors"
-                >
-                  <span className="font-bold text-slate-900 text-sm pr-4">{faq.q}</span>
-                  <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
-                </button>
-                {openFaq === i && (
-                  <div className="px-4 pb-4 -mt-1">
-                    <p className="text-xs text-slate-500 leading-relaxed">{faq.a}</p>
-                  </div>
+            <ExternalLink size={14} className="text-slate-300" />
+          </a>
+          <div className="flex items-center gap-3 p-4">
+            <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black shrink-0">2</div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-slate-900">Paste your API key</p>
+              <p className="text-xs text-slate-400">
+                In the extension settings, paste your key
+                {profile.api_key_prefix && profile.api_key_prefix !== 'pending' && (
+                  <code className="ml-1 px-1 py-0.5 bg-slate-100 rounded text-[10px]">{profile.api_key_prefix}...</code>
                 )}
-              </div>
-            ))}
+              </p>
+            </div>
           </div>
+          <a href={`https://${shop}`} target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors">
+            <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-black shrink-0">3</div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-slate-900">Test on your store</p>
+              <p className="text-xs text-slate-400">Visit a product page and click "Try it on with AI"</p>
+            </div>
+            <ExternalLink size={14} className="text-slate-300" />
+          </a>
+        </div>
+
+        {/* ─── FAQ (compact) ─── */}
+        <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+          <div className="p-4">
+            <h2 className="font-bold text-slate-900">FAQ</h2>
+          </div>
+          {[
+            { q: 'How does the trial work?', a: '5 free renders. Each customer try-on uses 1 credit. No credit card needed.' },
+            { q: 'What can customers try on?', a: 'Clothing, glasses, jewelry, hats, shoes, bags — the AI detects the product type automatically.' },
+            { q: 'Are customer photos stored?', a: 'No. Photos are processed in real-time and immediately discarded. Zero data retention.' },
+            { q: 'How fast is rendering?', a: '10-30 seconds depending on image quality.' },
+            { q: 'Can I cancel?', a: 'Yes, anytime. Monthly subscriptions managed via Stripe.' },
+          ].map((faq, i) => (
+            <div key={i}>
+              <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-50 transition-colors">
+                <span className="text-sm font-bold text-slate-900 pr-4">{faq.q}</span>
+                <ChevronDown size={14} className={`text-slate-300 shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} />
+              </button>
+              {openFaq === i && (
+                <div className="px-4 pb-4 -mt-1">
+                  <p className="text-xs text-slate-500">{faq.a}</p>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
         {/* ─── Support ─── */}
-        <div className="text-center py-6 border-t border-slate-100">
-          <p className="text-xs text-slate-400">
-            Questions? <a href="mailto:infoagalaz@gmail.com" className="text-indigo-600 font-bold hover:text-indigo-800">infoagalaz@gmail.com</a>
-          </p>
-        </div>
+        <p className="text-center text-xs text-slate-300 py-2">
+          Need help? <a href="mailto:support@agalaz.com" className="text-indigo-500 font-bold">support@agalaz.com</a>
+        </p>
       </div>
     </div>
   );
