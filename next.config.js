@@ -1,16 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Allow Shopify to embed the app in an iframe
+  // CSP headers are handled by middleware.ts for /dashboard and /embed
+  // This only sets defaults for other routes
   async headers() {
     return [
       {
-        source: '/(.*)',
+        source: '/api/:path*',
         headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: 'frame-ancestors https://*.myshopify.com https://admin.shopify.com',
-          },
-          { key: 'X-Frame-Options', value: '' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
         ],
       },
     ];
