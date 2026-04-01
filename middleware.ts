@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export function middleware() {
+export function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
-  // Remove X-Frame-Options (Vercel sets DENY by default)
-  // and set CSP to allow Shopify admin embedding
-  response.headers.delete('X-Frame-Options');
-  response.headers.set('X-Frame-Options', 'ALLOWALL');
+  // Critical: Remove X-Frame-Options that Next.js/Vercel sets to DENY
+  // Shopify requires the app to be embeddable in an iframe
+  response.headers.set('X-Frame-Options', '');
   response.headers.set(
     'Content-Security-Policy',
     "frame-ancestors https://*.myshopify.com https://admin.shopify.com https://*.shopify.com *;"
@@ -16,5 +16,5 @@ export function middleware() {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };

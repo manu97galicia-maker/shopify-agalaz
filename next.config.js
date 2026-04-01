@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  poweredByHeader: false,
   async headers() {
     return [
       {
@@ -8,10 +9,6 @@ const nextConfig = {
           {
             key: 'Content-Security-Policy',
             value: 'frame-ancestors https://*.myshopify.com https://admin.shopify.com https://*.shopify.com *;',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'ALLOWALL',
           },
         ],
       },
