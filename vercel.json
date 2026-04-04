@@ -3,15 +3,14 @@
   "headers": [
     {
       "source": "/(.*)",
-      "has": [],
       "headers": [
         {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors https://*.myshopify.com https://admin.shopify.com https://*.shopify.com *;"
         },
         {
-          "key": "Content-Security-Policy",
-          "value": "frame-ancestors https://*.myshopify.com https://admin.shopify.com https://*.shopify.com;"
+          "key": "X-Frame-Options",
+          "value": "ALLOWALL"
         }
       ]
     },
