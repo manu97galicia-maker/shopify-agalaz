@@ -4,11 +4,12 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
 
-  // If Shopify embeds the root URL with embedded=1, redirect to dashboard
-  if (pathname === '/' && searchParams.get('embedded') === '1') {
+  // If Shopify embeds the root URL with embedded=1, rewrite to dashboard (not redirect)
+  // Rewrite preserves the URL and lets App Bridge detect properly
+  if (pathname === '/' && (searchParams.get('embedded') === '1' || searchParams.get('shop'))) {
     const dashboardUrl = new URL('/dashboard', request.url);
     dashboardUrl.search = request.nextUrl.search;
-    return NextResponse.redirect(dashboardUrl);
+    return NextResponse.rewrite(dashboardUrl);
   }
 
   const response = NextResponse.next();
