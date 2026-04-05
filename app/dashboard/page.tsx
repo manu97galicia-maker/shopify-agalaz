@@ -114,6 +114,21 @@ function DashboardContent() {
   // Try to detect shop from URL on client side
   useEffect(() => {
     if (shop) return;
+    // Check full URL for shop param (works with rewrites)
+    const fullUrl = window.location.href;
+    const shopMatch = fullUrl.match(/[?&]shop=([^&]+)/);
+    if (shopMatch) { setShop(decodeURIComponent(shopMatch[1])); return; }
+    // Check host param in URL (Shopify embeds)
+    const hostMatch = fullUrl.match(/[?&]host=([^&]+)/);
+    if (hostMatch) {
+      try {
+        const decoded = atob(decodeURIComponent(hostMatch[1]));
+        const m = decoded.match(/([^/]+\.myshopify\.com)/);
+        if (m) { setShop(m[1]); return; }
+        const adminM = decoded.match(/admin\.shopify\.com\/store\/([^/?]+)/);
+        if (adminM) { setShop(adminM[1] + '.myshopify.com'); return; }
+      } catch {}
+    }
     // Check referrer for shop domain
     try {
       const ref = document.referrer;
@@ -130,10 +145,8 @@ function DashboardContent() {
         if (match) { setShop(match[1]); return; }
       }
     } catch {}
-    // Check URL hash or full URL
-    const fullUrl = window.location.href;
-    const shopMatch = fullUrl.match(/[?&]shop=([^&]+)/);
-    if (shopMatch) setShop(decodeURIComponent(shopMatch[1]));
+    // Stop loading after 3 seconds if no shop found
+    setTimeout(() => setLoading(false), 3000);
   }, []);
 
   useEffect(() => {
@@ -495,7 +508,7 @@ function DashboardContent() {
 
         {/* ─── Support ─── */}
         <p className="text-center text-xs text-slate-300 py-2">
-          Need help? <a href="mailto:support@agalaz.com" className="text-indigo-500 font-bold">support@agalaz.com</a>
+          Need help? <a href="mailto:infoagalaz@gmail.com" className="text-indigo-500 font-bold">infoagalaz@gmail.com</a>
         </p>
       </div>
     </div>

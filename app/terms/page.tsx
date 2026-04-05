@@ -73,7 +73,7 @@ export default function TermsPage() {
         <h2>9. Contact</h2>
         <p>
           For questions about these terms, contact us at:{' '}
-          <a href="mailto:support@agalaz.com">support@agalaz.com</a>
+          <a href="mailto:infoagalaz@gmail.com">infoagalaz@gmail.com</a>
         </p>
 
         <hr />

@@ -81,7 +81,7 @@ export default function PrivacyPage() {
         <h2>8. Contact</h2>
         <p>
           For privacy questions or data requests, contact us at:{' '}
-          <a href="mailto:privacy@agalaz.com">privacy@agalaz.com</a>
+          <a href="mailto:infoagalaz@gmail.com">infoagalaz@gmail.com</a>
         </p>
 
         <hr />

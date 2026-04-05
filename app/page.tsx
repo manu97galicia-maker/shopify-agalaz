@@ -200,7 +200,7 @@ export default function HomePage() {
           <div className="flex gap-4 text-xs text-slate-400">
             <Link href="/privacy" className="hover:text-indigo-600 transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-indigo-600 transition-colors">Terms</Link>
-            <a href="mailto:support@agalaz.com" className="hover:text-indigo-600 transition-colors">Support</a>
+            <a href="mailto:infoagalaz@gmail.com" className="hover:text-indigo-600 transition-colors">Support</a>
           </div>
         </div>
       </footer>
