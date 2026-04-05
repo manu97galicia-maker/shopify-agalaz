@@ -50,27 +50,37 @@ async function getShopifySessionToken(): Promise<string | null> {
   return null;
 }
 
+// Extract shop from any URL string
+function extractShopFromUrl(url: string): string {
+  try {
+    const params = new URLSearchParams(url.includes('?') ? url.split('?')[1] : '');
+    const shop = params.get('shop');
+    if (shop) return shop;
+    const host = params.get('host');
+    if (host) {
+      const decoded = atob(host);
+      const m = decoded.match(/([^/]+\.myshopify\.com)/);
+      if (m) return m[1];
+      const am = decoded.match(/admin\.shopify\.com\/store\/([^/?]+)/);
+      if (am) return am[1] + '.myshopify.com';
+    }
+  } catch {}
+  return '';
+}
+
 function DashboardContent() {
   const searchParams = useSearchParams();
   const isNew = searchParams.get('new') === 'true';
   const subscribed = searchParams.get('subscribed') === 'true';
 
-  // Detect shop from multiple sources: URL param, Shopify host param, referrer
+  // Detect shop — use window.location directly (works with rewrites)
   const [shop, setShop] = useState(() => {
-    const fromParam = searchParams.get('shop') || '';
+    // First try searchParams (works without rewrite)
+    const fromParam = extractShopFromUrl('?' + searchParams.toString());
     if (fromParam) return fromParam;
-    // Shopify passes host as base64 — can be admin.shopify.com/store/SHOP-NAME or SHOP.myshopify.com
-    const host = searchParams.get('host') || '';
-    if (host) {
-      try {
-        const decoded = atob(host);
-        // Try myshopify.com format
-        const match = decoded.match(/([^/]+\.myshopify\.com)/);
-        if (match) return match[1];
-        // Try admin.shopify.com/store/SHOP-NAME format
-        const adminMatch = decoded.match(/admin\.shopify\.com\/store\/([^/?]+)/);
-        if (adminMatch) return adminMatch[1] + '.myshopify.com';
-      } catch {}
+    // Then try window.location (works with rewrite)
+    if (typeof window !== 'undefined') {
+      return extractShopFromUrl(window.location.href);
     }
     return '';
   });
@@ -111,39 +121,16 @@ function DashboardContent() {
     initSessionToken();
   }, []);
 
-  // Try to detect shop from URL on client side
+  // Retry shop detection on client side
   useEffect(() => {
     if (shop) return;
-    // Check full URL for shop param (works with rewrites)
-    const fullUrl = window.location.href;
-    const shopMatch = fullUrl.match(/[?&]shop=([^&]+)/);
-    if (shopMatch) { setShop(decodeURIComponent(shopMatch[1])); return; }
-    // Check host param in URL (Shopify embeds)
-    const hostMatch = fullUrl.match(/[?&]host=([^&]+)/);
-    if (hostMatch) {
-      try {
-        const decoded = atob(decodeURIComponent(hostMatch[1]));
-        const m = decoded.match(/([^/]+\.myshopify\.com)/);
-        if (m) { setShop(m[1]); return; }
-        const adminM = decoded.match(/admin\.shopify\.com\/store\/([^/?]+)/);
-        if (adminM) { setShop(adminM[1] + '.myshopify.com'); return; }
-      } catch {}
-    }
-    // Check referrer for shop domain
+    const detected = extractShopFromUrl(window.location.href);
+    if (detected) { setShop(detected); return; }
+    // Check cookies
     try {
-      const ref = document.referrer;
-      if (ref) {
-        const match = ref.match(/([^/]+\.myshopify\.com)/);
-        if (match) { setShop(match[1]); return; }
-      }
-    } catch {}
-    // Check ancestor origin (Shopify iframe)
-    try {
-      if (window.location.ancestorOrigins?.length > 0) {
-        const ancestor = window.location.ancestorOrigins[0];
-        const match = ancestor.match(/([^/]+\.myshopify\.com)/);
-        if (match) { setShop(match[1]); return; }
-      }
+      const cookies = document.cookie.split(';').map(c => c.trim());
+      const shopCookie = cookies.find(c => c.startsWith('agalaz_shop='));
+      if (shopCookie) { setShop(decodeURIComponent(shopCookie.split('=')[1])); return; }
     } catch {}
     // Stop loading after 3 seconds if no shop found
     setTimeout(() => setLoading(false), 3000);
