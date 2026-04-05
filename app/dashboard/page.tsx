@@ -59,13 +59,17 @@ function DashboardContent() {
   const [shop, setShop] = useState(() => {
     const fromParam = searchParams.get('shop') || '';
     if (fromParam) return fromParam;
-    // Shopify sometimes passes host instead of shop
+    // Shopify passes host as base64 — can be admin.shopify.com/store/SHOP-NAME or SHOP.myshopify.com
     const host = searchParams.get('host') || '';
     if (host) {
       try {
         const decoded = atob(host);
+        // Try myshopify.com format
         const match = decoded.match(/([^/]+\.myshopify\.com)/);
         if (match) return match[1];
+        // Try admin.shopify.com/store/SHOP-NAME format
+        const adminMatch = decoded.match(/admin\.shopify\.com\/store\/([^/?]+)/);
+        if (adminMatch) return adminMatch[1] + '.myshopify.com';
       } catch {}
     }
     return '';
