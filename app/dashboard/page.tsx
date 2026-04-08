@@ -44,7 +44,10 @@ async function getShopifySessionToken(): Promise<string | null> {
   try {
     const w = window as any;
     if (w.shopify?.idToken) {
-      return await w.shopify.idToken();
+      return await Promise.race([
+        w.shopify.idToken() as Promise<string>,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000))
+      ]);
     }
   } catch {}
   return null;
