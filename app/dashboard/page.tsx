@@ -160,20 +160,11 @@ function DashboardContent() {
 
   async function loadProfile() {
     try {
-      // Refresh session token if available (with safety)
-      let token: string | null = null;
-      try {
-        token = await getShopifySessionToken();
-        if (token) setSessionToken(token);
-      } catch {}
-      const headers: Record<string, string> = {};
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const res = await fetch(`/api/partners/profile?shop=${encodeURIComponent(shop)}`, { headers });
+      const res = await fetch(`/api/partners/profile?shop=${encodeURIComponent(shop)}`);
       if (res.ok) {
         const data = await res.json();
         setProfile(data.partner);
       } else if (res.status === 404) {
-        // No partner found — auto-setup this Shopify store
         await autoSetupShop();
         return;
       }
