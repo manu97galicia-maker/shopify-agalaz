@@ -139,6 +139,14 @@ function DashboardContent() {
     setTimeout(() => setLoading(false), 3000);
   }, []);
 
+  // Safety timeout: always stop loading after 5 seconds
+  useEffect(() => {
+    const safety = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
+    return () => clearTimeout(safety);
+  }, []);
+
   useEffect(() => {
     if (!shop) return;
     loadProfile();
@@ -152,9 +160,12 @@ function DashboardContent() {
 
   async function loadProfile() {
     try {
-      // Refresh session token if available
-      const token = await getShopifySessionToken();
-      if (token) setSessionToken(token);
+      // Refresh session token if available (with safety)
+      let token: string | null = null;
+      try {
+        token = await getShopifySessionToken();
+        if (token) setSessionToken(token);
+      } catch {}
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
       const res = await fetch(`/api/partners/profile?shop=${encodeURIComponent(shop)}`, { headers });
