@@ -90,6 +90,7 @@ export default function DashboardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [generatingKey, setGeneratingKey] = useState(false);
 
   // Detect shop on mount (client-side only)
   useEffect(() => {
@@ -204,6 +205,29 @@ export default function DashboardPage() {
       setError('Something went wrong');
     }
     setIsSubmitting(false);
+  }
+
+  async function handleGenerateKey() {
+    if (!profile || generatingKey) return;
+    setGeneratingKey(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/partners/generate-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partner_id: profile.id }),
+      });
+      const data = await res.json();
+      if (data.api_key) {
+        setApiKey(data.api_key);
+        loadProfile();
+      } else {
+        setError(data.error || 'Failed to generate key');
+      }
+    } catch {
+      setError('Something went wrong');
+    }
+    setGeneratingKey(false);
   }
 
   function copyToClipboard(text: string, label: string) {
@@ -340,6 +364,41 @@ export default function DashboardPage() {
             </p>
           </div>
         </div>
+
+        {/* ─── API Key Section ─── */}
+        {apiKey ? (
+          <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-3">
+            <div className="flex items-center gap-2.5">
+              <Check size={18} className="text-emerald-600" />
+              <span className="font-bold text-emerald-900">New API key generated! Copy it now — it won't be shown again.</span>
+            </div>
+            <div className="flex gap-2">
+              <code className="flex-1 px-3 py-2 bg-white border border-emerald-200 rounded-lg text-xs font-mono text-emerald-900 break-all">
+                {apiKey}
+              </code>
+              <button onClick={() => copyToClipboard(apiKey, 'apikey')}
+                className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors">
+                {copied === 'apikey' ? <Check size={14} /> : <Copy size={14} />}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold text-slate-900">API Key</p>
+              <p className="text-xs text-slate-400">
+                {profile.api_key_prefix && profile.api_key_prefix !== 'pending'
+                  ? <>Current key: <code className="font-mono">{profile.api_key_prefix}...</code> — Generate a new one to replace it.</>
+                  : 'No API key yet. Generate one to get started.'
+                }
+              </p>
+            </div>
+            <button onClick={handleGenerateKey} disabled={generatingKey}
+              className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50">
+              {generatingKey ? 'Generating...' : 'Generate API Key'}
+            </button>
+          </div>
+        )}
 
         {/* ─── Quick Actions ─── */}
         {isPaid && (

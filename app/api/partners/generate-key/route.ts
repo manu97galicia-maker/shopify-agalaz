@@ -22,20 +22,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Partner not found' }, { status: 404 });
     }
 
-    if (partner.is_active && partner.api_key_hash !== 'pending') {
-      return NextResponse.json({ error: 'API key already generated' }, { status: 409 });
-    }
-
     const { raw, hash, prefix } = generateApiKey();
+    const isFirstKey = !partner.api_key_hash || partner.api_key_hash === 'pending';
 
-    await admin.from('partners').update({
+    const updateData: Record<string, any> = {
       api_key_hash: hash,
       api_key_prefix: prefix,
       is_active: true,
-      credits_remaining: 5,
-      setup_paid: true,
       updated_at: new Date().toISOString(),
-    }).eq('id', partner_id);
+    };
+
+    // Only set initial credits on first key generation
+    if (isFirstKey) {
+      updateData.credits_remaining = 5;
+      updateData.setup_paid = true;
+    }
+
+    await admin.from('partners').update(updateData).eq('id', partner_id);
 
     return NextResponse.json({
       success: true,
