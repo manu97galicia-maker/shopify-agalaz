@@ -27,18 +27,6 @@ interface PartnerProfile {
   has_subscription: boolean;
 }
 
-export default function DashboardPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="animate-pulse text-slate-400 text-sm font-bold">Loading...</div>
-      </div>
-    }>
-      <DashboardContent />
-    </Suspense>
-  );
-}
-
 // Helper to get session token from App Bridge
 async function getShopifySessionToken(): Promise<string | null> {
   try {
@@ -53,42 +41,47 @@ async function getShopifySessionToken(): Promise<string | null> {
   return null;
 }
 
-// Extract shop from any URL string
-function extractShopFromUrl(url: string): string {
+// Extract shop from URL params, host param, or id_token
+function detectShop(): string {
+  if (typeof window === 'undefined') return '';
   try {
-    const params = new URLSearchParams(url.includes('?') ? url.split('?')[1] : '');
+    const params = new URLSearchParams(window.location.search);
+    // 1. Direct shop param
     const shop = params.get('shop');
     if (shop) return shop;
+    // 2. Shopify host param (base64 encoded)
     const host = params.get('host');
     if (host) {
-      const decoded = atob(host);
-      const m = decoded.match(/([^/]+\.myshopify\.com)/);
-      if (m) return m[1];
-      const am = decoded.match(/admin\.shopify\.com\/store\/([^/?]+)/);
-      if (am) return am[1] + '.myshopify.com';
+      try {
+        const decoded = atob(host);
+        const m = decoded.match(/([^/]+\.myshopify\.com)/);
+        if (m) return m[1];
+        const am = decoded.match(/admin\.shopify\.com\/store\/([^/?]+)/);
+        if (am) return am[1] + '.myshopify.com';
+      } catch {}
     }
+    // 3. id_token JWT payload
+    const idToken = params.get('id_token');
+    if (idToken) {
+      try {
+        const payload = JSON.parse(atob(idToken.split('.')[1]));
+        if (payload.dest) {
+          const m = payload.dest.match(/([^/]+\.myshopify\.com)/);
+          if (m) return m[1];
+        }
+      } catch {}
+    }
+    // 4. Cookie
+    const cookies = document.cookie.split(';').map(c => c.trim());
+    const shopCookie = cookies.find(c => c.startsWith('agalaz_shop='));
+    if (shopCookie) return decodeURIComponent(shopCookie.split('=')[1]);
   } catch {}
   return '';
 }
 
-function DashboardContent() {
-  const searchParams = useSearchParams();
-  const isNew = searchParams.get('new') === 'true';
-  const subscribed = searchParams.get('subscribed') === 'true';
-
-  // Detect shop — use window.location directly (works with rewrites)
-  const [shop, setShop] = useState(() => {
-    // First try searchParams (works without rewrite)
-    const fromParam = extractShopFromUrl('?' + searchParams.toString());
-    if (fromParam) return fromParam;
-    // Then try window.location (works with rewrite)
-    if (typeof window !== 'undefined') {
-      return extractShopFromUrl(window.location.href);
-    }
-    return '';
-  });
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
-
+export default function DashboardPage() {
+  // No Suspense needed — we don't use useSearchParams
+  const [shop, setShop] = useState('');
   const [profile, setProfile] = useState<PartnerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -98,45 +91,26 @@ function DashboardContent() {
   const [error, setError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Initialize App Bridge session token
+  // Detect shop on mount (client-side only)
   useEffect(() => {
-    async function initSessionToken() {
-      // Wait for App Bridge to load
-      const maxWait = 3000;
-      const start = Date.now();
-      while (Date.now() - start < maxWait) {
+    const detected = detectShop();
+    console.log('[Agalaz] Detected shop:', detected, 'URL:', window.location.href);
+    if (detected) {
+      setShop(detected);
+    } else {
+      // Try App Bridge session token
+      (async () => {
         const token = await getShopifySessionToken();
         if (token) {
-          setSessionToken(token);
-          // Extract shop from token payload
           try {
             const payload = JSON.parse(atob(token.split('.')[1]));
-            if (payload.dest) {
-              const match = payload.dest.match(/([^/]+\.myshopify\.com)/);
-              if (match && !shop) setShop(match[1]);
-            }
+            const m = payload.dest?.match(/([^/]+\.myshopify\.com)/);
+            if (m) { setShop(m[1]); return; }
           } catch {}
-          break;
         }
-        await new Promise(r => setTimeout(r, 200));
-      }
+        setLoading(false);
+      })();
     }
-    initSessionToken();
-  }, []);
-
-  // Retry shop detection on client side
-  useEffect(() => {
-    if (shop) return;
-    const detected = extractShopFromUrl(window.location.href);
-    if (detected) { setShop(detected); return; }
-    // Check cookies
-    try {
-      const cookies = document.cookie.split(';').map(c => c.trim());
-      const shopCookie = cookies.find(c => c.startsWith('agalaz_shop='));
-      if (shopCookie) { setShop(decodeURIComponent(shopCookie.split('=')[1])); return; }
-    } catch {}
-    // Stop loading after 3 seconds if no shop found
-    setTimeout(() => setLoading(false), 3000);
   }, []);
 
   // Safety timeout: always stop loading after 5 seconds
@@ -469,6 +443,35 @@ function DashboardContent() {
             </div>
             <ExternalLink size={14} className="text-slate-300" />
           </a>
+        </div>
+
+        {/* ─── Manual Code Install (alternative) ─── */}
+        <div className="bg-white border border-slate-200 rounded-xl divide-y divide-slate-100">
+          <div className="p-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-black">1</div>
+              <h2 className="font-bold text-slate-900">Platform-specific instructions</h2>
+            </div>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <Store size={18} className="text-indigo-600" />
+              <span className="text-sm font-bold text-slate-900">Shopify</span>
+            </div>
+            <ol className="space-y-2 text-xs text-slate-700">
+              <li>1. Go to <strong>Online Store → Themes → Edit code</strong></li>
+              <li>2. Open <code className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-mono">theme.liquid</code></li>
+              <li>3. Paste the <code className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-mono">&lt;script&gt;</code> tag just before <code className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-mono">&lt;/head&gt;</code></li>
+              <li>4. Open your product template (e.g. <code className="px-1.5 py-0.5 bg-slate-100 rounded text-[10px] font-mono">sections/main-product.liquid</code>)</li>
+              <li>5. Add the div where you want the button:</li>
+            </ol>
+            <div className="bg-slate-900 rounded-lg p-3 overflow-x-auto">
+              <code className="text-[11px] text-emerald-400 font-mono whitespace-pre">{`<div id="agalaz-tryon" data-garment="{{ product.featured_image | image_url: width: 800 }}"></div>`}</code>
+            </div>
+            <p className="text-[10px] text-indigo-600 font-medium">
+              The widget also auto-detects Shopify product images — so even without data-garment, it usually works automatically.
+            </p>
+          </div>
         </div>
 
         {/* ─── FAQ (compact) ─── */}
