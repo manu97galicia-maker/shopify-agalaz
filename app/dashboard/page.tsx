@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Sparkles, Copy, Check, Zap, Shield, BarChart3, ExternalLink, ChevronDown } from 'lucide-react';
+import { Sparkles, Copy, Check, Zap, Shield, BarChart3, ExternalLink, ChevronDown, Store } from 'lucide-react';
 
 const PLANS = [
   { id: 'starter', name: 'Starter', price: 150, renders: 200, extra: '0.75', features: ['200 renders/month', 'Customizable widget'] },
