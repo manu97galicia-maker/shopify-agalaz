@@ -126,12 +126,6 @@ export default function DashboardPage() {
     loadProfile();
   }, [shop]);
 
-  useEffect(() => {
-    if (subscribed && shop) {
-      loadProfile();
-    }
-  }, [subscribed]);
-
   async function loadProfile() {
     try {
       const res = await fetch(`/api/partners/profile?shop=${encodeURIComponent(shop)}`);
