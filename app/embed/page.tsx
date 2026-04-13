@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, Loader2, X, Camera, Check, Download, ThumbsUp, ThumbsDown, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
+import { Sparkles, Loader2, X, Camera, Check, Download, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
 
 // Standalone embed page for B2B widget — no auth required
 // URL: /embed?key=API_KEY&garment=GARMENT_URL&lang=es
@@ -22,8 +22,6 @@ export default function EmbedPage() {
   const [availableSizes, setAvailableSizes] = useState<string[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [feedbackGiven, setFeedbackGiven] = useState<'liked' | 'disliked' | null>(null);
-  const [showSizeOptions, setShowSizeOptions] = useState(false);
 
   const userRef = useRef<HTMLInputElement>(null);
   const garmentRef = useRef<HTMLInputElement>(null);
@@ -312,8 +310,6 @@ export default function EmbedPage() {
     setCurrentSize(null);
     setPreviewSize(null);
     setSelectedColor(null);
-    setFeedbackGiven(null);
-    setShowSizeOptions(false);
     setError(null);
     setStep('upload');
   }
@@ -495,25 +491,8 @@ export default function EmbedPage() {
 
               {/* Right: Controls panel */}
               <div className="md:w-1/2 space-y-4">
-                {/* Feedback */}
-                {!feedbackGiven && (
-                  <div className={`${glass} p-5 space-y-3`}>
-                    <p className="text-[14px] font-semibold text-white/80 text-center">{t.feedbackQuestion}</p>
-                    <div className="flex gap-3">
-                      <button onClick={() => { setFeedbackGiven('liked'); setShowSizeOptions(true); }}
-                        className="flex-1 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-[12px] font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2">
-                        <ThumbsUp size={14} /> {t.feedbackYes}
-                      </button>
-                      <button onClick={() => { setFeedbackGiven('disliked'); setShowSizeOptions(true); }}
-                        className="flex-1 py-3 bg-orange-500/10 border border-orange-500/20 rounded-xl text-[12px] font-semibold text-orange-400 hover:bg-orange-500/20 transition-all flex items-center justify-center gap-2">
-                        <ThumbsDown size={14} /> {t.feedbackNo}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Size options after feedback */}
-                {feedbackGiven && showSizeOptions && availableSizes.length > 1 && (
+                {/* Size options — shown directly after render */}
+                {availableSizes.length > 1 && (
                   <div className={`${glass} p-5 space-y-4`}>
                     <p className="text-[14px] font-semibold text-white/80 text-center">{t.sizeQuestion}</p>
 
