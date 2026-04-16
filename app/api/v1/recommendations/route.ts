@@ -43,10 +43,10 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const recommendations = await getRecommendations(partner.id, productId);
-    return NextResponse.json({ recommendations }, { headers });
+    const result = await getRecommendations(partner.id, productId);
+    return NextResponse.json(result, { headers });
   } catch (err: any) {
     console.error('Recommendations error:', err?.message);
-    return NextResponse.json({ recommendations: [] }, { headers });
+    return NextResponse.json({ recommendations: [], styleNote: null, styleNoteEs: null }, { headers });
   }
 }

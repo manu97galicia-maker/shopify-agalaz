@@ -44,23 +44,33 @@ interface Recommendation {
   category: string;
 }
 
+export interface RecommendationResult {
+  recommendations: Recommendation[];
+  styleNote: string | null;
+  styleNoteEs: string | null;
+}
+
 async function rankWithGemini(
   source: { title: string; primary_category: string; style: string; color_family: string },
   candidates: Array<{ id: string; title: string; primary_category: string; style: string; color_family: string }>,
-): Promise<string[]> {
+): Promise<{ pickedIds: string[]; note: string | null; noteEs: string | null }> {
   if (!API_KEY || candidates.length <= 3) {
-    return candidates.slice(0, 3).map((c) => c.id);
+    return { pickedIds: candidates.slice(0, 3).map((c) => c.id), note: null, noteEs: null };
   }
 
-  const promptText = `Given a customer wearing this item:
-SOURCE: ${source.title} | ${source.primary_category} | ${source.style} | ${source.color_family}
+  const promptText = `You are a fashion stylist. A customer is wearing this item:
+SOURCE: ${source.title} | category=${source.primary_category} | style=${source.style} | color=${source.color_family}
 
-Pick the 3 best COMPLEMENTARY items from these candidates to complete the outfit. Prioritize color harmony and style coherence.
+TASK 1: From the candidates below, pick the 3 best COMPLEMENTARY items to complete the outfit. Prioritize color harmony and style coherence.
+
+TASK 2: Write a short friendly note (max 22 words) explaining why the source item looks good on the customer and what style it projects. Be specific about the color/silhouette, not generic.
+
+TASK 3: Translate the note to Spanish.
 
 CANDIDATES:
 ${candidates.map((c, i) => `${i}|${c.title}|${c.primary_category}|${c.style}|${c.color_family}`).join('\n')}
 
-Output ONLY a JSON array of 3 candidate indices, e.g. [4,1,7]`;
+Output STRICT JSON only: {"picks":[i,i,i],"note":"...","note_es":"..."}`;
 
   try {
     const ai = new GoogleGenAI({ apiKey: API_KEY });
@@ -69,25 +79,29 @@ Output ONLY a JSON array of 3 candidate indices, e.g. [4,1,7]`;
       contents: [{ role: 'user', parts: [{ text: promptText }] }],
       config: { responseMimeType: 'application/json' },
     });
-    const text = res.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-    const indices = JSON.parse(text);
-    if (!Array.isArray(indices)) throw new Error('not array');
+    const text = res.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    const parsed = JSON.parse(text);
+    const indices = Array.isArray(parsed.picks) ? parsed.picks : Array.isArray(parsed) ? parsed : [];
     const picked: string[] = [];
     for (const idx of indices) {
       if (typeof idx === 'number' && candidates[idx]) picked.push(candidates[idx].id);
       if (picked.length >= 3) break;
     }
-    return picked.length > 0 ? picked : candidates.slice(0, 3).map((c) => c.id);
+    return {
+      pickedIds: picked.length > 0 ? picked : candidates.slice(0, 3).map((c) => c.id),
+      note: typeof parsed.note === 'string' ? parsed.note.substring(0, 220) : null,
+      noteEs: typeof parsed.note_es === 'string' ? parsed.note_es.substring(0, 240) : null,
+    };
   } catch (err: any) {
     console.warn('[rank] gemini error:', err?.message?.substring(0, 200));
-    return candidates.slice(0, 3).map((c) => c.id);
+    return { pickedIds: candidates.slice(0, 3).map((c) => c.id), note: null, noteEs: null };
   }
 }
 
 export async function getRecommendations(
   partnerId: string,
   sourceShopifyProductId: string,
-): Promise<Recommendation[]> {
+): Promise<RecommendationResult> {
   const admin = createAdminClient();
 
   const { data: cached } = await admin
@@ -100,8 +114,18 @@ export async function getRecommendations(
   if (cached?.recommended) {
     const age = Date.now() - new Date(cached.created_at).getTime();
     const THIRTY_DAYS = 30 * 24 * 3600 * 1000;
-    if (age < THIRTY_DAYS && Array.isArray(cached.recommended) && cached.recommended.length > 0) {
-      return cached.recommended as Recommendation[];
+    if (age < THIRTY_DAYS && cached.recommended) {
+      const payload = cached.recommended as any;
+      if (Array.isArray(payload) && payload.length > 0) {
+        return { recommendations: payload, styleNote: null, styleNoteEs: null };
+      }
+      if (payload?.recommendations && Array.isArray(payload.recommendations) && payload.recommendations.length > 0) {
+        return {
+          recommendations: payload.recommendations,
+          styleNote: payload.styleNote || null,
+          styleNoteEs: payload.styleNoteEs || null,
+        };
+      }
     }
   }
 
@@ -112,10 +136,14 @@ export async function getRecommendations(
     .eq('shopify_product_id', sourceShopifyProductId)
     .maybeSingle();
 
-  if (!source || !source.primary_category) return [];
+  if (!source || !source.primary_category) {
+    return { recommendations: [], styleNote: null, styleNoteEs: null };
+  }
 
   const compat = COMPLEMENTARY[source.primary_category as PrimaryCategory] || [];
-  if (compat.length === 0) return [];
+  if (compat.length === 0) {
+    return { recommendations: [], styleNote: null, styleNoteEs: null };
+  }
 
   const harmonious = COLOR_HARMONY[source.color_family] || [];
   const colorPrefs = [source.color_family, ...harmonious, 'neutral'].filter((v, i, a) => a.indexOf(v) === i);
@@ -129,7 +157,9 @@ export async function getRecommendations(
     .neq('shopify_product_id', sourceShopifyProductId)
     .limit(40);
 
-  if (!candidates || candidates.length === 0) return [];
+  if (!candidates || candidates.length === 0) {
+    return { recommendations: [], styleNote: null, styleNoteEs: null };
+  }
 
   const scored = candidates
     .map((c) => {
@@ -144,12 +174,14 @@ export async function getRecommendations(
     .sort((a, b) => b._score - a._score)
     .slice(0, 15);
 
-  const rankedIds = await rankWithGemini(
+  const ranked = await rankWithGemini(
     { title: source.title, primary_category: source.primary_category, style: source.style, color_family: source.color_family },
     scored.map((c) => ({ id: c.id, title: c.title, primary_category: c.primary_category, style: c.style, color_family: c.color_family })),
   );
 
-  const pickedIds = rankedIds.length >= 3 ? rankedIds : [...rankedIds, ...scored.map((c) => c.id)].slice(0, 3);
+  const pickedIds = ranked.pickedIds.length >= 3
+    ? ranked.pickedIds
+    : [...ranked.pickedIds, ...scored.map((c) => c.id)].slice(0, 3);
 
   const { data: variants } = await admin
     .from('product_variants')
@@ -176,16 +208,22 @@ export async function getRecommendations(
     if (recs.length >= 3) break;
   }
 
+  const result: RecommendationResult = {
+    recommendations: recs,
+    styleNote: ranked.note,
+    styleNoteEs: ranked.noteEs,
+  };
+
   if (recs.length > 0) {
     await admin
       .from('recommendations_cache')
       .upsert({
         partner_id: partnerId,
         source_shopify_product_id: sourceShopifyProductId,
-        recommended: recs,
+        recommended: { recommendations: recs, styleNote: ranked.note, styleNoteEs: ranked.noteEs },
         created_at: new Date().toISOString(),
       }, { onConflict: 'partner_id,source_shopify_product_id' });
   }
 
-  return recs;
+  return result;
 }

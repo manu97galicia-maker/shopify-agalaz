@@ -37,6 +37,8 @@ export default function EmbedPage() {
   const [variantId, setVariantId] = useState<string | null>(null);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [recsLoading, setRecsLoading] = useState(false);
+  const [styleNote, setStyleNote] = useState<string | null>(null);
+  const [recsFetched, setRecsFetched] = useState(false);
 
   const userRef = useRef<HTMLInputElement>(null);
   const garmentRef = useRef<HTMLInputElement>(null);
@@ -73,6 +75,8 @@ export default function EmbedPage() {
     completeLook: 'Completa el look',
     tryThisToo: '¡Sí! probar también',
     findingMatches: 'Buscando prendas a juego...',
+    whyItWorks: 'Por qué te queda bien',
+    noMatches: 'Aún no hay sugerencias para este producto. Pronto añadiremos más.',
   } : {
     title: 'Virtual Try-On',
     subtitle: 'Upload your photo and see how it looks',
@@ -105,6 +109,8 @@ export default function EmbedPage() {
     completeLook: 'Complete the look',
     tryThisToo: 'Yes! try this too',
     findingMatches: 'Finding matching items...',
+    whyItWorks: 'Why it looks good on you',
+    noMatches: 'No matching suggestions yet for this product. Coming soon.',
   };
 
   useEffect(() => {
@@ -323,6 +329,7 @@ export default function EmbedPage() {
   async function fetchRecommendations(pid: string) {
     if (!pid || !apiKey) return;
     setRecsLoading(true);
+    setRecsFetched(false);
     try {
       const res = await fetch('/api/v1/recommendations', {
         method: 'POST',
@@ -336,12 +343,15 @@ export default function EmbedPage() {
       if (Array.isArray(data.recommendations)) {
         setRecommendations(data.recommendations);
       }
+      const note = lang === 'es' ? (data.styleNoteEs || data.styleNote) : (data.styleNote || data.styleNoteEs);
+      if (note) setStyleNote(note);
     } catch { /* ignore */ }
     setRecsLoading(false);
+    setRecsFetched(true);
   }
 
   useEffect(() => {
-    if (step === 'result' && productId && recommendations.length === 0 && !recsLoading) {
+    if (step === 'result' && productId && !recsFetched && !recsLoading) {
       fetchRecommendations(productId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -374,6 +384,8 @@ export default function EmbedPage() {
       setVariantId(rec.variantId);
       setGarmentUrl(rec.image);
       setRecommendations([]);
+      setStyleNote(null);
+      setRecsFetched(false);
       window.parent.postMessage({ type: 'agalaz:result', image: data.image }, '*');
     } catch {
       setError(t.errorGeneric);
@@ -407,6 +419,8 @@ export default function EmbedPage() {
     setError(null);
     setStep('upload');
     setRecommendations([]);
+    setStyleNote(null);
+    setRecsFetched(false);
   }
 
   function formatPrice(cents: number, currency: string): string {
@@ -678,9 +692,24 @@ export default function EmbedPage() {
               </div>
             </div>
 
-            {/* Cross-sell carousel */}
-            {(recsLoading || recommendations.length > 0) && (
+            {/* Style note — explanation of why it looks good */}
+            {styleNote && (
               <div className="mt-8 pt-6 border-t border-white/[0.06]">
+                <div className={`${glass} p-4 flex gap-3`}>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shrink-0">
+                    <Sparkles size={14} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-semibold text-white/40 uppercase tracking-[0.1em] mb-1">{t.whyItWorks}</p>
+                    <p className="text-[13px] text-white/85 leading-snug">{styleNote}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Cross-sell carousel */}
+            {(recsLoading || recommendations.length > 0 || (recsFetched && productId)) && (
+              <div className={`${styleNote ? 'mt-5' : 'mt-8 pt-6 border-t border-white/[0.06]'}`}>
                 <p className="text-[11px] font-semibold text-white/40 uppercase tracking-[0.12em] mb-4 flex items-center gap-2">
                   <Sparkles size={12} /> {t.completeLook}
                 </p>
@@ -689,6 +718,8 @@ export default function EmbedPage() {
                     <Loader2 size={14} className="animate-spin" />
                     <span>{t.findingMatches}</span>
                   </div>
+                ) : recommendations.length === 0 ? (
+                  <p className="text-[12px] text-white/30 py-3">{t.noMatches}</p>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {recommendations.map((rec) => (
