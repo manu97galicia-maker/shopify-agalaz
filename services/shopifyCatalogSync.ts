@@ -7,8 +7,13 @@ interface SyncStats {
   inserted: number;
   updated: number;
   classified: number;
+  skippedAlreadyClassified: number;
+  cappedByPlan: number;
   errors: number;
 }
+
+const TRIAL_MAX_PRODUCTS = 500;
+const CLASSIFY_MAX_PER_SYNC = 800;
 
 function parsePriceCents(price: string): number {
   const n = parseFloat(price);
@@ -23,18 +28,28 @@ function pickOption(options: { name: string; value: string }[], re: RegExp): str
 async function upsertProduct(
   partnerId: string,
   p: ShopifyProduct,
-): Promise<{ productRowId: string; isNew: boolean } | null> {
+): Promise<{ productRowId: string; isNew: boolean; alreadyClassified: boolean; contentChanged: boolean } | null> {
   const admin = createAdminClient();
   const shopifyId = shopifyGidToId(p.id);
 
   const { data: existing } = await admin
     .from('products')
-    .select('id')
+    .select('id, title, product_type, tags, primary_category')
     .eq('partner_id', partnerId)
     .eq('shopify_product_id', shopifyId)
     .maybeSingle();
 
-  const payload = {
+  const newTitle = p.title;
+  const newType = p.productType || null;
+  const newTags = (p.tags || []).slice().sort();
+  const oldTags = (existing?.tags || []).slice().sort();
+
+  const contentChanged = !existing
+    || existing.title !== newTitle
+    || existing.product_type !== newType
+    || JSON.stringify(oldTags) !== JSON.stringify(newTags);
+
+  const payload: Record<string, any> = {
     partner_id: partnerId,
     shopify_product_id: shopifyId,
     handle: p.handle,
@@ -48,8 +63,16 @@ async function upsertProduct(
     synced_at: new Date().toISOString(),
   };
 
+  if (contentChanged && existing) {
+    payload.primary_category = null;
+    payload.style = null;
+    payload.color_family = null;
+    payload.classified_at = null;
+  }
+
   let productRowId: string;
   let isNew = false;
+  const alreadyClassified = !!existing?.primary_category && !contentChanged;
 
   if (existing) {
     await admin.from('products').update(payload).eq('id', existing.id);
@@ -84,7 +107,7 @@ async function upsertProduct(
     await admin.from('product_variants').insert(rows);
   }
 
-  return { productRowId, isNew };
+  return { productRowId, isNew, alreadyClassified, contentChanged };
 }
 
 export async function syncShopifyCatalog(
@@ -92,8 +115,20 @@ export async function syncShopifyCatalog(
   shopDomain: string,
   accessToken: string,
 ): Promise<SyncStats> {
-  const stats: SyncStats = { total: 0, inserted: 0, updated: 0, classified: 0, errors: 0 };
+  const stats: SyncStats = {
+    total: 0, inserted: 0, updated: 0, classified: 0,
+    skippedAlreadyClassified: 0, cappedByPlan: 0, errors: 0,
+  };
   const admin = createAdminClient();
+
+  const { data: partner } = await admin
+    .from('partners')
+    .select('plan')
+    .eq('id', partnerId)
+    .single();
+
+  const isTrial = !partner || partner.plan === 'trial';
+  const maxProducts = isTrial ? TRIAL_MAX_PRODUCTS : Infinity;
 
   const pendingClassification: Array<{
     rowId: string;
@@ -103,22 +138,36 @@ export async function syncShopifyCatalog(
     description: string | null;
   }> = [];
 
+  let processedCount = 0;
+
   try {
-    for await (const batch of iterateAllProducts(shopDomain, accessToken, 100)) {
+    outer: for await (const batch of iterateAllProducts(shopDomain, accessToken, 100)) {
       for (const product of batch) {
+        if (processedCount >= maxProducts) {
+          stats.cappedByPlan = stats.total - processedCount;
+          break outer;
+        }
         stats.total++;
+        processedCount++;
         try {
           const result = await upsertProduct(partnerId, product);
           if (!result) { stats.errors++; continue; }
           if (result.isNew) stats.inserted++; else stats.updated++;
 
-          pendingClassification.push({
-            rowId: result.productRowId,
-            title: product.title,
-            product_type: product.productType || null,
-            tags: product.tags || [],
-            description: product.description?.substring(0, 500) || null,
-          });
+          if (result.alreadyClassified) {
+            stats.skippedAlreadyClassified++;
+            continue;
+          }
+
+          if (pendingClassification.length < CLASSIFY_MAX_PER_SYNC) {
+            pendingClassification.push({
+              rowId: result.productRowId,
+              title: product.title,
+              product_type: product.productType || null,
+              tags: product.tags || [],
+              description: product.description?.substring(0, 500) || null,
+            });
+          }
         } catch (err: any) {
           console.warn(`[sync] product error:`, err?.message?.substring(0, 200));
           stats.errors++;
@@ -147,6 +196,21 @@ export async function syncShopifyCatalog(
           .eq('id', pendingClassification[i].rowId);
         stats.classified++;
       }
+
+      await admin.rpc('increment_ai_classifications', {
+        p_partner_id: partnerId,
+        p_delta: stats.classified,
+      }).then(() => null, async () => {
+        const { data: current } = await admin
+          .from('partners')
+          .select('ai_classifications_total')
+          .eq('id', partnerId)
+          .single();
+        await admin
+          .from('partners')
+          .update({ ai_classifications_total: (current?.ai_classifications_total || 0) + stats.classified })
+          .eq('id', partnerId);
+      });
     } catch (err: any) {
       console.warn('[sync] classification error:', err?.message?.substring(0, 200));
     }

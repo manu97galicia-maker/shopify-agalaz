@@ -228,11 +228,14 @@ export default function DashboardPage() {
       const res = await fetch('/api/partners/sync-catalog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partner_id: profile.id }),
+        body: JSON.stringify({ partner_id: profile.id, shop }),
       });
       const data = await res.json();
-      if (!res.ok) setError(data.error || 'Sync failed');
-      // Poll stats a few times while sync runs in background
+      if (!res.ok) {
+        setError(data.error || 'Sync failed');
+        setSyncing(false);
+        return;
+      }
       for (let i = 0; i < 12; i++) {
         await new Promise((r) => setTimeout(r, 5000));
         await loadCatalogStats(profile.id);
