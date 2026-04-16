@@ -98,6 +98,8 @@
   function openModal() {
     var params = 'key=' + encodeURIComponent(API_KEY) + '&lang=' + lang;
     if (garmentImage) params += '&garment=' + encodeURIComponent(garmentImage);
+    if (productId) params += '&productId=' + encodeURIComponent(productId);
+    if (variantId) params += '&variantId=' + encodeURIComponent(variantId);
     iframe.src = APP_URL + '/embed?' + params;
     overlay.style.display = 'flex';
   }
@@ -120,10 +122,12 @@
     if (!e.data || !e.data.type) return;
     if (e.data.type === 'agalaz:close') closeModal();
     if (e.data.type === 'agalaz:addToCart') {
+      var targetVariant = e.data.variantId || variantId;
+      if (!targetVariant) return;
       fetch('/cart/add.js', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: variantId, quantity: 1 }),
+        body: JSON.stringify({ id: targetVariant, quantity: 1 }),
       }).then(function() {
         window.location.href = '/cart';
       });

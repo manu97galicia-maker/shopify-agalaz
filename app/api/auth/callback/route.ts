@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyHmac, exchangeToken, isValidShopDomain } from '@/lib/shopify';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { generateApiKey } from '@/lib/partners';
+import { triggerCatalogSync } from '@/lib/triggerCatalogSync';
+import { registerProductWebhooks } from '@/lib/shopifyWebhooks';
 
 export async function GET(request: NextRequest) {
   const params = Object.fromEntries(request.nextUrl.searchParams.entries());
@@ -52,6 +54,8 @@ export async function GET(request: NextRequest) {
         updated_at: new Date().toISOString(),
       }).eq('id', existing.id);
       partnerId = existing.id;
+      triggerCatalogSync(partnerId);
+      registerProductWebhooks(shop, accessToken).catch(() => {});
     } else {
       // Create new partner record for this Shopify store
       const shopDomain = shop.replace('.myshopify.com', '') + '.myshopify.com';
@@ -86,6 +90,9 @@ export async function GET(request: NextRequest) {
 
       partnerId = newPartner.id;
       isNewInstall = true;
+
+      triggerCatalogSync(partnerId);
+      registerProductWebhooks(shop, accessToken).catch(() => {});
 
       // Store the API key in a cookie so the dashboard can show it once
       const dashboardUrl = new URL('/dashboard', request.nextUrl.origin);

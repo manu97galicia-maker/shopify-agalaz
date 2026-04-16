@@ -1,7 +1,18 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, Loader2, X, Camera, Check, Download, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
+import { Sparkles, Loader2, X, Camera, Check, Download, ArrowUp, ArrowDown, RotateCcw, ShoppingBag } from 'lucide-react';
+
+interface Recommendation {
+  productId: string;
+  variantId: string;
+  handle: string;
+  title: string;
+  image: string | null;
+  priceCents: number;
+  currency: string;
+  category: string;
+}
 
 // Standalone embed page for B2B widget — no auth required
 // URL: /embed?key=API_KEY&garment=GARMENT_URL&lang=es
@@ -22,6 +33,10 @@ export default function EmbedPage() {
   const [availableSizes, setAvailableSizes] = useState<string[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [productId, setProductId] = useState<string | null>(null);
+  const [variantId, setVariantId] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [recsLoading, setRecsLoading] = useState(false);
 
   const userRef = useRef<HTMLInputElement>(null);
   const garmentRef = useRef<HTMLInputElement>(null);
@@ -54,6 +69,10 @@ export default function EmbedPage() {
     sizeDown: 'Más pequeña',
     thanksFeedback: 'Gracias',
     selectExactSize: 'Elige talla',
+    addToCart: 'Añadir al carrito',
+    completeLook: 'Completa el look',
+    tryThisToo: '¡Sí! probar también',
+    findingMatches: 'Buscando prendas a juego...',
   } : {
     title: 'Virtual Try-On',
     subtitle: 'Upload your photo and see how it looks',
@@ -82,6 +101,10 @@ export default function EmbedPage() {
     sizeDown: 'Size down',
     thanksFeedback: 'Thanks',
     selectExactSize: 'Pick a size',
+    addToCart: 'Add to cart',
+    completeLook: 'Complete the look',
+    tryThisToo: 'Yes! try this too',
+    findingMatches: 'Finding matching items...',
   };
 
   useEffect(() => {
@@ -93,6 +116,10 @@ export default function EmbedPage() {
     if (sizes) setAvailableSizes(sizes.split(',').filter(Boolean));
     const colors = params.get('colors');
     if (colors) setAvailableColors(colors.split(',').filter(Boolean));
+    const pid = params.get('productId');
+    if (pid) setProductId(pid.replace(/[^0-9]/g, ''));
+    const vid = params.get('variantId');
+    if (vid) setVariantId(vid.replace(/[^0-9]/g, ''));
   }, []);
 
   const [garmentError, setGarmentError] = useState(false);
@@ -287,6 +314,73 @@ export default function EmbedPage() {
     a.click();
   }
 
+  function handleAddToCart(vid?: string | null) {
+    const target = vid || variantId;
+    if (!target) return;
+    window.parent.postMessage({ type: 'agalaz:addToCart', variantId: target }, '*');
+  }
+
+  async function fetchRecommendations(pid: string) {
+    if (!pid || !apiKey) return;
+    setRecsLoading(true);
+    try {
+      const res = await fetch('/api/v1/recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ productId: pid }),
+      });
+      const data = await res.json();
+      if (Array.isArray(data.recommendations)) {
+        setRecommendations(data.recommendations);
+      }
+    } catch { /* ignore */ }
+    setRecsLoading(false);
+  }
+
+  useEffect(() => {
+    if (step === 'result' && productId && recommendations.length === 0 && !recsLoading) {
+      fetchRecommendations(productId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, productId]);
+
+  async function tryRecommendation(rec: Recommendation) {
+    if (!userImage || !rec.image) return;
+    setIsLoading(true);
+    setError(null);
+    setPreviewSize(null);
+    setSelectedColor(null);
+
+    try {
+      const res = await fetch('/api/v1/tryon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ userImage, garmentUrl: rec.image }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.image) {
+        setError(data.error || t.errorGeneric);
+        setIsLoading(false);
+        return;
+      }
+      setResultImage(data.image);
+      setProductId(rec.productId);
+      setVariantId(rec.variantId);
+      setGarmentUrl(rec.image);
+      setRecommendations([]);
+      window.parent.postMessage({ type: 'agalaz:result', image: data.image }, '*');
+    } catch {
+      setError(t.errorGeneric);
+    }
+    setIsLoading(false);
+  }
+
   function getSizeUpDown() {
     if (!currentSize || availableSizes.length < 2) return { up: null, down: null };
     const idx = availableSizes.indexOf(currentSize);
@@ -312,6 +406,14 @@ export default function EmbedPage() {
     setSelectedColor(null);
     setError(null);
     setStep('upload');
+    setRecommendations([]);
+  }
+
+  function formatPrice(cents: number, currency: string): string {
+    if (!cents) return '';
+    const amount = (cents / 100).toFixed(2);
+    const symbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
+    return currency === 'EUR' ? `${amount} ${symbol}` : `${symbol}${amount}`;
   }
 
   // Glass card style
@@ -565,8 +667,62 @@ export default function EmbedPage() {
                     )}
                   </button>
                 )}
+
+                {/* Add current product to cart */}
+                {variantId && (
+                  <button onClick={() => handleAddToCart()} disabled={isLoading}
+                    className="w-full py-4 bg-emerald-500 text-white rounded-2xl text-[14px] font-semibold hover:bg-emerald-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-30">
+                    <ShoppingBag size={16} /> {t.addToCart}
+                  </button>
+                )}
               </div>
             </div>
+
+            {/* Cross-sell carousel */}
+            {(recsLoading || recommendations.length > 0) && (
+              <div className="mt-8 pt-6 border-t border-white/[0.06]">
+                <p className="text-[11px] font-semibold text-white/40 uppercase tracking-[0.12em] mb-4 flex items-center gap-2">
+                  <Sparkles size={12} /> {t.completeLook}
+                </p>
+                {recsLoading ? (
+                  <div className="flex items-center gap-2 text-white/30 text-[12px] py-4">
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>{t.findingMatches}</span>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {recommendations.map((rec) => (
+                      <div key={rec.productId} className={`${glass} overflow-hidden flex flex-col`}>
+                        <div className="aspect-[3/4] bg-white/[0.04] relative">
+                          {rec.image ? (
+                            <img src={rec.image} alt={rec.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          ) : null}
+                        </div>
+                        <div className="p-2.5 flex-1 flex flex-col gap-2">
+                          <p className="text-[11px] font-semibold text-white/80 line-clamp-2 leading-tight">{rec.title}</p>
+                          {rec.priceCents > 0 && (
+                            <p className="text-[11px] font-medium text-white/40">{formatPrice(rec.priceCents, rec.currency)}</p>
+                          )}
+                          <div className="flex gap-1.5 mt-auto">
+                            <button onClick={() => tryRecommendation(rec)} disabled={isLoading || !userImage}
+                              className="flex-1 py-2 bg-white text-black rounded-lg text-[10px] font-semibold hover:bg-white/90 active:scale-[0.98] transition-all flex items-center justify-center gap-1 disabled:opacity-30">
+                              <Sparkles size={10} /> {t.tryThisToo}
+                            </button>
+                            <button onClick={() => handleAddToCart(rec.variantId)}
+                              title={t.addToCart}
+                              className="px-2.5 py-2 bg-emerald-500/80 text-white rounded-lg text-[10px] font-semibold hover:bg-emerald-500 transition-all flex items-center justify-center">
+                              <ShoppingBag size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Sparkles, Copy, Check, Zap, Shield, BarChart3, ExternalLink, ChevronDown, Store } from 'lucide-react';
+import { Sparkles, Copy, Check, Zap, Shield, BarChart3, ExternalLink, ChevronDown, Store, RefreshCw, Package } from 'lucide-react';
 
 const PLANS = [
   { id: 'starter', name: 'Starter', price: 150, renders: 200, extra: '0.75', features: ['200 renders/month', 'Customizable widget'] },
@@ -91,6 +91,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [generatingKey, setGeneratingKey] = useState(false);
+  const [catalogStats, setCatalogStats] = useState<{ total: number; classified: number; last_synced: string | null } | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   // Detect shop on mount (client-side only)
   useEffect(() => {
@@ -126,6 +128,10 @@ export default function DashboardPage() {
     if (!shop) return;
     loadProfile();
   }, [shop]);
+
+  useEffect(() => {
+    if (profile?.id) loadCatalogStats(profile.id);
+  }, [profile?.id]);
 
   async function loadProfile() {
     try {
@@ -205,6 +211,36 @@ export default function DashboardPage() {
       setError('Something went wrong');
     }
     setIsSubmitting(false);
+  }
+
+  async function loadCatalogStats(partnerId: string) {
+    try {
+      const res = await fetch(`/api/partners/sync-catalog?partner_id=${encodeURIComponent(partnerId)}`);
+      if (res.ok) setCatalogStats(await res.json());
+    } catch { /* ignore */ }
+  }
+
+  async function handleSyncCatalog() {
+    if (!profile || syncing) return;
+    setSyncing(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/partners/sync-catalog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partner_id: profile.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) setError(data.error || 'Sync failed');
+      // Poll stats a few times while sync runs in background
+      for (let i = 0; i < 12; i++) {
+        await new Promise((r) => setTimeout(r, 5000));
+        await loadCatalogStats(profile.id);
+      }
+    } catch {
+      setError('Something went wrong');
+    }
+    setSyncing(false);
   }
 
   async function handleGenerateKey() {
@@ -399,6 +435,36 @@ export default function DashboardPage() {
             </button>
           </div>
         )}
+
+        {/* ─── Catalog Sync (cross-sell) ─── */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center shrink-0">
+                <Package size={16} className="text-violet-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900">Product catalog</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {catalogStats && catalogStats.total > 0
+                    ? <>{catalogStats.total} products synced · {catalogStats.classified} classified</>
+                    : <>Sync your Shopify catalog to enable smart cross-sell recommendations after try-on.</>
+                  }
+                </p>
+                {catalogStats?.last_synced && (
+                  <p className="text-[10px] text-slate-300 mt-0.5">
+                    Last sync: {new Date(catalogStats.last_synced).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            </div>
+            <button onClick={handleSyncCatalog} disabled={syncing}
+              className="shrink-0 px-4 py-2 bg-violet-600 text-white text-xs font-bold rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 flex items-center gap-2">
+              <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
+              {syncing ? 'Syncing...' : (catalogStats && catalogStats.total > 0 ? 'Re-sync' : 'Sync now')}
+            </button>
+          </div>
+        </div>
 
         {/* ─── Quick Actions ─── */}
         {isPaid && (
