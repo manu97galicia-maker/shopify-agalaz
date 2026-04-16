@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateTryOnImage } from '@/services/geminiService';
-import { validateApiKey, deductPartnerCredit } from '@/lib/partners';
+import { validateApiKey, deductPartnerCredit, checkAndBumpAttempts } from '@/lib/partners';
 
 export const maxDuration = 120;
 
@@ -50,6 +50,20 @@ export async function POST(request: NextRequest) {
 
     if (!valid || !partner) {
       return NextResponse.json({ error: error || 'Unauthorized' }, { status: 401, headers });
+    }
+
+    // Rate limit: count ATTEMPTS (not just successes) to prevent cost abuse via failed calls
+    const attemptCheck = await checkAndBumpAttempts(
+      partner.id,
+      partner.credits_remaining,
+      (partner as any).attempts_today ?? 0,
+      (partner as any).attempts_reset_date ?? null,
+    );
+    if (!attemptCheck.allowed) {
+      return NextResponse.json(
+        { error: `Daily attempt limit reached (${attemptCheck.cap}). Try again tomorrow.` },
+        { status: 429, headers }
+      );
     }
 
     const body = await request.json();
