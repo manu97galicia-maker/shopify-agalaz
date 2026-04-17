@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyHmac, exchangeToken, isValidShopDomain } from '@/lib/shopify';
+import { verifyHmac, exchangeToken, isValidShopDomain, verifyOAuthState } from '@/lib/shopify';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { generateApiKey } from '@/lib/partners';
+import { triggerCatalogSync } from '@/lib/triggerCatalogSync';
+import { registerProductWebhooks } from '@/lib/shopifyWebhooks';
 
 export async function GET(request: NextRequest) {
   const params = Object.fromEntries(request.nextUrl.searchParams.entries());
@@ -18,6 +20,12 @@ export async function GET(request: NextRequest) {
   // Verify HMAC
   if (!verifyHmac(params)) {
     return NextResponse.json({ error: 'HMAC verification failed' }, { status: 403 });
+  }
+
+  // Verify OAuth state nonce (CSRF protection)
+  const state = params.state || '';
+  if (!verifyOAuthState(state)) {
+    return NextResponse.json({ error: 'Invalid OAuth state' }, { status: 403 });
   }
 
   try {
@@ -52,6 +60,8 @@ export async function GET(request: NextRequest) {
         updated_at: new Date().toISOString(),
       }).eq('id', existing.id);
       partnerId = existing.id;
+      triggerCatalogSync(partnerId);
+      registerProductWebhooks(shop, accessToken).catch(() => {});
     } else {
       // Create new partner record for this Shopify store
       const shopDomain = shop.replace('.myshopify.com', '') + '.myshopify.com';
@@ -86,6 +96,9 @@ export async function GET(request: NextRequest) {
 
       partnerId = newPartner.id;
       isNewInstall = true;
+
+      triggerCatalogSync(partnerId);
+      registerProductWebhooks(shop, accessToken).catch(() => {});
 
       // Store the API key in a cookie so the dashboard can show it once
       const dashboardUrl = new URL('/dashboard', request.nextUrl.origin);
@@ -126,7 +139,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Auth callback error:', error?.message);
     return NextResponse.json(
-      { error: 'Authentication failed: ' + (error?.message || 'unknown') },
+      { error: 'Authentication failed. Please try again.' },
       { status: 500 }
     );
   }

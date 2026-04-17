@@ -28,7 +28,18 @@ export async function POST(req: NextRequest) {
     const origin = req.headers.get('origin') || process.env.SHOPIFY_APP_URL || '';
     const stripe = getStripe();
 
-    const session = await stripe.checkout.sessions.create({
+    // Check if partner already has a subscription (upgrade, no trial)
+    const { createAdminClient } = await import('@/lib/supabaseAdmin');
+    const admin = createAdminClient();
+    const { data: partnerData } = await admin
+      .from('partners')
+      .select('stripe_subscription_id, plan')
+      .eq('id', partnerId)
+      .single();
+
+    const isNewTrial = !partnerData?.stripe_subscription_id && (!partnerData?.plan || partnerData.plan === 'trial');
+
+    const sessionParams: any = {
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price: MONTHLY_PRICES[planKey], quantity: 1 }],
@@ -40,8 +51,22 @@ export async function POST(req: NextRequest) {
         type: 'partner_subscription',
         partner_id: partnerId,
         partner_plan: plan,
+        is_trial: isNewTrial ? 'true' : 'false',
       },
-    });
+    };
+
+    // 7-day free trial for new merchants subscribing to Starter
+    if (isNewTrial) {
+      sessionParams.subscription_data = {
+        trial_period_days: 7,
+        metadata: {
+          partner_id: partnerId,
+          partner_plan: plan,
+        },
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {

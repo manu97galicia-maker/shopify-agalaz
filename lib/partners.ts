@@ -28,6 +28,37 @@ export interface Partner {
   credits_monthly_limit: number;
   total_renders: number;
   is_active: boolean;
+  attempts_today?: number;
+  attempts_reset_date?: string;
+}
+
+export async function checkAndBumpAttempts(
+  partnerId: string,
+  creditsRemaining: number,
+  currentAttempts: number,
+  resetDate: string | null,
+): Promise<{ allowed: boolean; attempts: number; cap: number }> {
+  const admin = createAdminClient();
+  const today = new Date().toISOString().split('T')[0];
+  const isSameDay = resetDate === today;
+  const attempts = isSameDay ? (currentAttempts || 0) : 0;
+
+  // Cap = 3x current credits, minimum 10, max 500 (prevents runaway cost)
+  const cap = Math.min(500, Math.max(10, creditsRemaining * 3));
+
+  if (attempts >= cap) {
+    return { allowed: false, attempts, cap };
+  }
+
+  await admin
+    .from('partners')
+    .update({
+      attempts_today: attempts + 1,
+      attempts_reset_date: today,
+    })
+    .eq('id', partnerId);
+
+  return { allowed: true, attempts: attempts + 1, cap };
 }
 
 /**

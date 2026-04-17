@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateTryOnImage } from '@/services/geminiService';
-import { validateApiKey, deductPartnerCredit } from '@/lib/partners';
+import { validateApiKey, deductPartnerCredit, checkAndBumpAttempts } from '@/lib/partners';
 
 export const maxDuration = 120;
 
@@ -17,9 +17,21 @@ function detectMimeType(base64: string): string | null {
   return 'image/jpeg';
 }
 
+function isAllowedOrigin(origin: string): boolean {
+  if (!origin) return false;
+  try {
+    const host = new URL(origin).hostname;
+    return host.endsWith('.myshopify.com')
+      || host.endsWith('.agalaz.com') || host === 'agalaz.com'
+      || host.endsWith('.vercel.app')
+      || host === 'localhost';
+  } catch { return false; }
+}
+
 function corsHeaders(origin?: string | null) {
+  const allowed = origin && isAllowedOrigin(origin) ? origin : 'https://agalaz.com';
   return {
-    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
@@ -50,6 +62,20 @@ export async function POST(request: NextRequest) {
 
     if (!valid || !partner) {
       return NextResponse.json({ error: error || 'Unauthorized' }, { status: 401, headers });
+    }
+
+    // Rate limit: count ATTEMPTS (not just successes) to prevent cost abuse via failed calls
+    const attemptCheck = await checkAndBumpAttempts(
+      partner.id,
+      partner.credits_remaining,
+      (partner as any).attempts_today ?? 0,
+      (partner as any).attempts_reset_date ?? null,
+    );
+    if (!attemptCheck.allowed) {
+      return NextResponse.json(
+        { error: `Daily attempt limit reached (${attemptCheck.cap}). Try again tomorrow.` },
+        { status: 429, headers }
+      );
     }
 
     const body = await request.json();

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Sparkles, Copy, Check, Zap, Shield, BarChart3, ExternalLink, ChevronDown, Store } from 'lucide-react';
+import { Sparkles, Copy, Check, Zap, Shield, BarChart3, ExternalLink, ChevronDown, Store, RefreshCw, Package } from 'lucide-react';
 
 const PLANS = [
   { id: 'starter', name: 'Starter', price: 150, renders: 200, extra: '0.75', features: ['200 renders/month', 'Customizable widget'] },
@@ -25,6 +25,7 @@ interface PartnerProfile {
   api_key_prefix: string | null;
   has_api_key: boolean;
   has_subscription: boolean;
+  trial_ends_at: string | null;
 }
 
 // Helper to get session token from App Bridge
@@ -91,6 +92,8 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [generatingKey, setGeneratingKey] = useState(false);
+  const [catalogStats, setCatalogStats] = useState<{ total: number; classified: number; last_synced: string | null } | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   // Detect shop on mount (client-side only)
   useEffect(() => {
@@ -126,6 +129,10 @@ export default function DashboardPage() {
     if (!shop) return;
     loadProfile();
   }, [shop]);
+
+  useEffect(() => {
+    if (profile?.id) loadCatalogStats(profile.id);
+  }, [profile?.id]);
 
   async function loadProfile() {
     try {
@@ -207,6 +214,39 @@ export default function DashboardPage() {
     setIsSubmitting(false);
   }
 
+  async function loadCatalogStats(partnerId: string) {
+    try {
+      const res = await fetch(`/api/partners/sync-catalog?partner_id=${encodeURIComponent(partnerId)}`);
+      if (res.ok) setCatalogStats(await res.json());
+    } catch { /* ignore */ }
+  }
+
+  async function handleSyncCatalog() {
+    if (!profile || syncing) return;
+    setSyncing(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/partners/sync-catalog', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partner_id: profile.id, shop }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Sync failed');
+        setSyncing(false);
+        return;
+      }
+      for (let i = 0; i < 12; i++) {
+        await new Promise((r) => setTimeout(r, 5000));
+        await loadCatalogStats(profile.id);
+      }
+    } catch {
+      setError('Something went wrong');
+    }
+    setSyncing(false);
+  }
+
   async function handleGenerateKey() {
     if (!profile || generatingKey) return;
     setGeneratingKey(true);
@@ -284,7 +324,12 @@ export default function DashboardPage() {
 
   const isPaid = profile.has_subscription;
   const hasCredits = profile.credits_remaining > 0;
-  const showPaywall = !isPaid && !hasCredits;
+  const isInTrial = !!(profile.trial_ends_at && new Date(profile.trial_ends_at) > new Date());
+  const trialDaysLeft = profile.trial_ends_at
+    ? Math.max(0, Math.ceil((new Date(profile.trial_ends_at).getTime() - Date.now()) / (24 * 3600 * 1000)))
+    : 0;
+  const showTrialOffer = !isPaid && !isInTrial && profile.plan === 'trial';
+  const showPaywall = !isPaid && !hasCredits && !isInTrial;
   const creditsPercent = Math.min(100, (profile.credits_remaining / (profile.credits_monthly_limit || 5)) * 100);
   const creditsLow = creditsPercent < 20;
 
@@ -301,9 +346,15 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-2">
             <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full ${
-              isPaid ? 'bg-indigo-50 text-indigo-600' : hasCredits ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+              isPaid && !isInTrial ? 'bg-indigo-50 text-indigo-600'
+                : isInTrial ? 'bg-amber-50 text-amber-600'
+                : hasCredits ? 'bg-emerald-50 text-emerald-600'
+                : 'bg-red-50 text-red-600'
             }`}>
-              {isPaid ? profile.plan : hasCredits ? 'Trial' : 'No credits'}
+              {isPaid && !isInTrial ? profile.plan
+                : isInTrial ? `Trial · ${trialDaysLeft}d left`
+                : hasCredits ? 'Free trial'
+                : 'No credits'}
             </span>
           </div>
         </div>
@@ -400,6 +451,36 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* ─── Catalog Sync (cross-sell) ─── */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center shrink-0">
+                <Package size={16} className="text-violet-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900">Product catalog</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {catalogStats && catalogStats.total > 0
+                    ? <>{catalogStats.total} products synced · {catalogStats.classified} classified</>
+                    : <>Sync your Shopify catalog to enable smart cross-sell recommendations after try-on.</>
+                  }
+                </p>
+                {catalogStats?.last_synced && (
+                  <p className="text-[10px] text-slate-300 mt-0.5">
+                    Last sync: {new Date(catalogStats.last_synced).toLocaleString()}
+                  </p>
+                )}
+              </div>
+            </div>
+            <button onClick={handleSyncCatalog} disabled={syncing}
+              className="shrink-0 px-4 py-2 bg-violet-600 text-white text-xs font-bold rounded-lg hover:bg-violet-700 transition-colors disabled:opacity-50 flex items-center gap-2">
+              <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
+              {syncing ? 'Syncing...' : (catalogStats && catalogStats.total > 0 ? 'Re-sync' : 'Sync now')}
+            </button>
+          </div>
+        </div>
+
         {/* ─── Quick Actions ─── */}
         {isPaid && (
           <div className="flex gap-3">
@@ -430,13 +511,68 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ─── Paywall ─── */}
-        {showPaywall && (
-          <div className="bg-white border-2 border-amber-300 rounded-xl p-6 space-y-5">
+        {/* ─── Trial banner (active trial) ─── */}
+        {isInTrial && (
+          <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+                <Zap size={18} className="text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-black text-slate-900">Free trial — {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  You have <strong>{profile.credits_remaining} renders</strong> included. After the trial, your Starter plan ({PLANS[0].price === 150 ? '149' : PLANS[0].price}€/month) activates automatically.
+                </p>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Cancel anytime before {profile.trial_ends_at ? new Date(profile.trial_ends_at).toLocaleDateString() : ''} and you won't be charged.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── Trial offer (not yet subscribed) ─── */}
+        {showTrialOffer && (
+          <div className="bg-white border-2 border-indigo-300 rounded-xl p-6 space-y-5">
             <div className="text-center space-y-1">
-              <Zap size={24} className="text-amber-500 mx-auto" />
-              <h2 className="text-lg font-black text-slate-900">Free trial ended</h2>
-              <p className="text-slate-400 text-sm">Subscribe to reactivate the try-on button.</p>
+              <Zap size={24} className="text-indigo-500 mx-auto" />
+              <h2 className="text-lg font-black text-slate-900">Start your 7-day free trial</h2>
+              <p className="text-slate-400 text-sm">50 renders included. Cancel anytime — no charge if you cancel within 7 days.</p>
+            </div>
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="font-bold text-slate-900">Starter plan</span>
+                <span className="font-black text-indigo-600">149€/month</span>
+              </div>
+              <ul className="text-xs text-slate-600 space-y-1">
+                <li>&#10003; 200 renders/month</li>
+                <li>&#10003; AI-powered virtual try-on</li>
+                <li>&#10003; Smart cross-sell recommendations</li>
+                <li>&#10003; Customizable widget</li>
+              </ul>
+              <div className="pt-1 border-t border-indigo-100">
+                <p className="text-[10px] text-slate-400">First 7 days free. After trial: 149€/month. Cancel anytime.</p>
+              </div>
+            </div>
+            {error && <p className="text-sm text-red-600 font-bold text-center">{error}</p>}
+            <button onClick={() => { setSelectedPlan('starter'); handleSubscribe(); }} disabled={isSubmitting}
+              className="w-full py-4 bg-indigo-600 text-white rounded-xl text-sm font-black uppercase tracking-wider hover:bg-indigo-700 transition-colors disabled:opacity-50">
+              {isSubmitting ? 'Redirecting to checkout...' : 'Start free trial'}
+            </button>
+            <button onClick={() => { setSelectedPlan('growth'); handleSubscribe(); }} disabled={isSubmitting}
+              className="w-full py-3 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:border-indigo-300 transition-colors disabled:opacity-50">
+              {isSubmitting ? '...' : 'Or start with Growth (499€/month · 1,000 renders)'}
+            </button>
+          </div>
+        )}
+
+        {/* ─── Paywall (trial expired, no subscription) ─── */}
+        {showPaywall && !showTrialOffer && (
+          <div className="bg-white border-2 border-red-200 rounded-xl p-6 space-y-5">
+            <div className="text-center space-y-1">
+              <Zap size={24} className="text-red-400 mx-auto" />
+              <h2 className="text-lg font-black text-slate-900">Trial ended</h2>
+              <p className="text-slate-400 text-sm">Subscribe to reactivate the try-on button on your store.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {PLANS.map((plan) => (
@@ -448,7 +584,7 @@ export default function DashboardPage() {
                     <div className="absolute -top-2 right-3 px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black uppercase rounded-full">Popular</div>
                   )}
                   <p className="font-black text-slate-900">{plan.name}</p>
-                  <p className="text-xl font-black text-slate-900 mt-1">${plan.price === 150 ? '149' : '499'}<span className="text-xs font-normal text-slate-400">/mo</span></p>
+                  <p className="text-xl font-black text-slate-900 mt-1">{plan.price === 150 ? '149' : '499'}€<span className="text-xs font-normal text-slate-400">/mo</span></p>
                   <p className="text-xs text-indigo-600 font-bold mt-1">{plan.renders} renders/mo</p>
                 </button>
               ))}

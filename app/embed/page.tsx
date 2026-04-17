@@ -1,7 +1,18 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Sparkles, Loader2, X, Camera, Check, Download, ArrowUp, ArrowDown, RotateCcw } from 'lucide-react';
+import { Sparkles, Loader2, X, Camera, Check, Download, ArrowUp, ArrowDown, RotateCcw, ShoppingBag } from 'lucide-react';
+
+interface Recommendation {
+  productId: string;
+  variantId: string;
+  handle: string;
+  title: string;
+  image: string | null;
+  priceCents: number;
+  currency: string;
+  category: string;
+}
 
 // Standalone embed page for B2B widget — no auth required
 // URL: /embed?key=API_KEY&garment=GARMENT_URL&lang=es
@@ -22,12 +33,12 @@ export default function EmbedPage() {
   const [availableSizes, setAvailableSizes] = useState<string[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [shopDomain, setShopDomain] = useState('');
-  const [productType, setProductType] = useState('');
-  const [productTitle, setProductTitle] = useState('');
-  const [compliment, setCompliment] = useState('');
-  const [crossSellMessage, setCrossSellMessage] = useState('');
-  const [recommendations, setRecommendations] = useState<Array<{id: number; title: string; image: string; url: string; price: string}>>([]);
+  const [productId, setProductId] = useState<string | null>(null);
+  const [variantId, setVariantId] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [recsLoading, setRecsLoading] = useState(false);
+  const [styleNote, setStyleNote] = useState<string | null>(null);
+  const [recsFetched, setRecsFetched] = useState(false);
 
   const userRef = useRef<HTMLInputElement>(null);
   const garmentRef = useRef<HTMLInputElement>(null);
@@ -60,6 +71,12 @@ export default function EmbedPage() {
     sizeDown: 'Más pequeña',
     thanksFeedback: 'Gracias',
     selectExactSize: 'Elige talla',
+    addToCart: 'Añadir al carrito',
+    completeLook: 'Completa el look',
+    tryThisToo: '¡Sí! probar también',
+    findingMatches: 'Buscando prendas a juego...',
+    whyItWorks: 'Por qué te queda bien',
+    noMatches: 'Aún no hay sugerencias para este producto. Pronto añadiremos más.',
   } : {
     title: 'Virtual Try-On',
     subtitle: 'Upload your photo and see how it looks',
@@ -88,6 +105,12 @@ export default function EmbedPage() {
     sizeDown: 'Size down',
     thanksFeedback: 'Thanks',
     selectExactSize: 'Pick a size',
+    addToCart: 'Add to cart',
+    completeLook: 'Complete the look',
+    tryThisToo: 'Yes! try this too',
+    findingMatches: 'Finding matching items...',
+    whyItWorks: 'Why it looks good on you',
+    noMatches: 'No matching suggestions yet for this product. Coming soon.',
   };
 
   useEffect(() => {
@@ -99,9 +122,10 @@ export default function EmbedPage() {
     if (sizes) setAvailableSizes(sizes.split(',').filter(Boolean));
     const colors = params.get('colors');
     if (colors) setAvailableColors(colors.split(',').filter(Boolean));
-    setShopDomain(params.get('shop') || '');
-    setProductType(params.get('ptype') || '');
-    setProductTitle(params.get('ptitle') || '');
+    const pid = params.get('productId');
+    if (pid) setProductId(pid.replace(/[^0-9]/g, ''));
+    const vid = params.get('variantId');
+    if (vid) setVariantId(vid.replace(/[^0-9]/g, ''));
   }, []);
 
   const [garmentError, setGarmentError] = useState(false);
@@ -279,17 +303,6 @@ export default function EmbedPage() {
         setResultImage(data.image);
         setStep('result');
         window.parent.postMessage({ type: 'agalaz:result', image: data.image }, '*');
-        // Fetch cross-sell recommendations
-        if (shopDomain) {
-          fetch(`/api/v1/recommendations?shop=${encodeURIComponent(shopDomain)}&ptype=${encodeURIComponent(productType)}&lang=${lang}`)
-            .then(r => r.json())
-            .then(rec => {
-              if (rec.compliment) setCompliment(rec.compliment);
-              if (rec.crossSellMessage) setCrossSellMessage(rec.crossSellMessage);
-              if (rec.recommendations?.length) setRecommendations(rec.recommendations);
-            })
-            .catch(() => {});
-        }
       } else {
         setError(t.errorGeneric);
       }
@@ -305,6 +318,79 @@ export default function EmbedPage() {
     a.href = resultImage;
     a.download = 'virtual-tryon.png';
     a.click();
+  }
+
+  function handleAddToCart(vid?: string | null) {
+    const target = vid || variantId;
+    if (!target) return;
+    window.parent.postMessage({ type: 'agalaz:addToCart', variantId: target }, '*');
+  }
+
+  async function fetchRecommendations(pid: string) {
+    if (!pid || !apiKey) return;
+    setRecsLoading(true);
+    setRecsFetched(false);
+    try {
+      const res = await fetch('/api/v1/recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ productId: pid }),
+      });
+      const data = await res.json();
+      if (Array.isArray(data.recommendations)) {
+        setRecommendations(data.recommendations);
+      }
+      const note = lang === 'es' ? (data.styleNoteEs || data.styleNote) : (data.styleNote || data.styleNoteEs);
+      if (note) setStyleNote(note);
+    } catch { /* ignore */ }
+    setRecsLoading(false);
+    setRecsFetched(true);
+  }
+
+  useEffect(() => {
+    if (step === 'result' && productId && !recsFetched && !recsLoading) {
+      fetchRecommendations(productId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, productId]);
+
+  async function tryRecommendation(rec: Recommendation) {
+    if (!userImage || !rec.image) return;
+    setIsLoading(true);
+    setError(null);
+    setPreviewSize(null);
+    setSelectedColor(null);
+
+    try {
+      const res = await fetch('/api/v1/tryon', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ userImage, garmentUrl: rec.image }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.image) {
+        setError(data.error || t.errorGeneric);
+        setIsLoading(false);
+        return;
+      }
+      setResultImage(data.image);
+      setProductId(rec.productId);
+      setVariantId(rec.variantId);
+      setGarmentUrl(rec.image);
+      setRecommendations([]);
+      setStyleNote(null);
+      setRecsFetched(false);
+      window.parent.postMessage({ type: 'agalaz:result', image: data.image }, '*');
+    } catch {
+      setError(t.errorGeneric);
+    }
+    setIsLoading(false);
   }
 
   function getSizeUpDown() {
@@ -330,11 +416,18 @@ export default function EmbedPage() {
     setCurrentSize(null);
     setPreviewSize(null);
     setSelectedColor(null);
-    setCompliment('');
-    setCrossSellMessage('');
-    setRecommendations([]);
     setError(null);
     setStep('upload');
+    setRecommendations([]);
+    setStyleNote(null);
+    setRecsFetched(false);
+  }
+
+  function formatPrice(cents: number, currency: string): string {
+    if (!cents) return '';
+    const amount = (cents / 100).toFixed(2);
+    const symbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
+    return currency === 'EUR' ? `${amount} ${symbol}` : `${symbol}${amount}`;
   }
 
   // Glass card style
@@ -589,45 +682,78 @@ export default function EmbedPage() {
                   </button>
                 )}
 
-                {/* Compliment + Cross-sell recommendations */}
-                {compliment && (
-                  <div className={`${glass} p-5 space-y-3`}>
-                    <p className="text-[14px] font-semibold text-white/90 text-center leading-relaxed">{compliment}</p>
-                  </div>
-                )}
-
-                {recommendations.length > 0 && (
-                  <div className={`${glass} p-5 space-y-3`}>
-                    <p className="text-[12px] font-semibold text-white/40 uppercase tracking-[0.08em]">
-                      {crossSellMessage}
-                    </p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {recommendations.map((rec) => (
-                        <a
-                          key={rec.id}
-                          href={rec.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="rounded-xl overflow-hidden ring-1 ring-white/[0.08] hover:ring-white/30 transition-all group"
-                        >
-                          <div className="aspect-square overflow-hidden">
-                            <img
-                              src={rec.image}
-                              alt={rec.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            />
-                          </div>
-                          <div className="p-1.5 bg-white/[0.06]">
-                            <p className="text-[9px] font-medium text-white/60 truncate">{rec.title}</p>
-                            <p className="text-[9px] font-bold text-white/80">${rec.price}</p>
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
+                {/* Add current product to cart */}
+                {variantId && (
+                  <button onClick={() => handleAddToCart()} disabled={isLoading}
+                    className="w-full py-4 bg-emerald-500 text-white rounded-2xl text-[14px] font-semibold hover:bg-emerald-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-30">
+                    <ShoppingBag size={16} /> {t.addToCart}
+                  </button>
                 )}
               </div>
             </div>
+
+            {/* Style note — explanation of why it looks good */}
+            {styleNote && (
+              <div className="mt-8 pt-6 border-t border-white/[0.06]">
+                <div className={`${glass} p-4 flex gap-3`}>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shrink-0">
+                    <Sparkles size={14} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[10px] font-semibold text-white/40 uppercase tracking-[0.1em] mb-1">{t.whyItWorks}</p>
+                    <p className="text-[13px] text-white/85 leading-snug">{styleNote}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Cross-sell carousel */}
+            {(recsLoading || recommendations.length > 0 || (recsFetched && productId)) && (
+              <div className={`${styleNote ? 'mt-5' : 'mt-8 pt-6 border-t border-white/[0.06]'}`}>
+                <p className="text-[11px] font-semibold text-white/40 uppercase tracking-[0.12em] mb-4 flex items-center gap-2">
+                  <Sparkles size={12} /> {t.completeLook}
+                </p>
+                {recsLoading ? (
+                  <div className="flex items-center gap-2 text-white/30 text-[12px] py-4">
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>{t.findingMatches}</span>
+                  </div>
+                ) : recommendations.length === 0 ? (
+                  <p className="text-[12px] text-white/30 py-3">{t.noMatches}</p>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {recommendations.map((rec) => (
+                      <div key={rec.productId} className={`${glass} overflow-hidden flex flex-col`}>
+                        <div className="aspect-[3/4] bg-white/[0.04] relative">
+                          {rec.image ? (
+                            <img src={rec.image} alt={rec.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                          ) : null}
+                        </div>
+                        <div className="p-2.5 flex-1 flex flex-col gap-2">
+                          <p className="text-[11px] font-semibold text-white/80 line-clamp-2 leading-tight">{rec.title}</p>
+                          {rec.priceCents > 0 && (
+                            <p className="text-[11px] font-medium text-white/40">{formatPrice(rec.priceCents, rec.currency)}</p>
+                          )}
+                          <div className="flex gap-1.5 mt-auto">
+                            <button onClick={() => tryRecommendation(rec)} disabled={isLoading || !userImage}
+                              className="flex-1 py-2 bg-white text-black rounded-lg text-[10px] font-semibold hover:bg-white/90 active:scale-[0.98] transition-all flex items-center justify-center gap-1 disabled:opacity-30">
+                              <Sparkles size={10} /> {t.tryThisToo}
+                            </button>
+                            <button onClick={() => handleAddToCart(rec.variantId)}
+                              title={t.addToCart}
+                              className="px-2.5 py-2 bg-emerald-500/80 text-white rounded-lg text-[10px] font-semibold hover:bg-emerald-500 transition-all flex items-center justify-center">
+                              <ShoppingBag size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

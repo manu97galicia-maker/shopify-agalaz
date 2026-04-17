@@ -1,29 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fetchRecommendations, getCompliment, getCrossSellMessage } from '@/services/crossSell';
+import { validateApiKey } from '@/lib/partners';
+import { getRecommendations } from '@/services/recommendationEngine';
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const shop = searchParams.get('shop') || '';
-  const productType = searchParams.get('ptype') || '';
-  const lang = searchParams.get('lang') || 'en';
+export const maxDuration = 30;
 
-  if (!shop) {
-    return NextResponse.json({ recommendations: [], compliment: '', crossSellMessage: '' });
+function isAllowedOrigin(origin: string): boolean {
+  if (!origin) return false;
+  try {
+    const host = new URL(origin).hostname;
+    return host.endsWith('.myshopify.com')
+      || host.endsWith('.agalaz.com') || host === 'agalaz.com'
+      || host.endsWith('.vercel.app')
+      || host === 'localhost';
+  } catch { return false; }
+}
+
+function corsHeaders(origin?: string | null) {
+  const allowed = origin && isAllowedOrigin(origin) ? origin : 'https://agalaz.com';
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  return new NextResponse(null, { status: 204, headers: corsHeaders(origin) });
+}
+
+export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const headers = corsHeaders(origin);
+
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Missing API key' }, { status: 401, headers });
   }
 
-  const recommendations = await fetchRecommendations(shop, productType, 3);
-  const compliment = getCompliment(productType, lang);
-  const crossSellMessage = recommendations.length > 0
-    ? getCrossSellMessage(productType, recommendations[0]?.productType || '', lang)
-    : '';
+  const apiKey = authHeader.replace('Bearer ', '');
+  const requestOrigin = origin || request.headers.get('referer');
+  const { valid, partner, error } = await validateApiKey(apiKey, requestOrigin);
+  if (!valid || !partner) {
+    return NextResponse.json({ error: error || 'Unauthorized' }, { status: 401, headers });
+  }
 
-  return NextResponse.json(
-    { recommendations, compliment, crossSellMessage },
-    {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Cache-Control': 'public, max-age=300',
-      },
-    },
-  );
+  let body: { productId?: string } = {};
+  try { body = await request.json(); } catch {}
+
+  const productId = String(body.productId || '').replace(/[^0-9]/g, '');
+  if (!productId) {
+    return NextResponse.json({ error: 'productId is required' }, { status: 400, headers });
+  }
+
+  try {
+    const result = await getRecommendations(partner.id, productId);
+    return NextResponse.json(result, { headers });
+  } catch (err: any) {
+    console.error('Recommendations error:', err?.message);
+    return NextResponse.json({ recommendations: [], styleNote: null, styleNoteEs: null }, { headers });
+  }
 }

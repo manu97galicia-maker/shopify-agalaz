@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac, timingSafeEqual, randomBytes } from 'crypto';
 
 const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY || '';
 const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET || '';
@@ -6,12 +6,40 @@ const SHOPIFY_SCOPES = process.env.SHOPIFY_SCOPES || 'read_products,read_themes,
 const SHOPIFY_APP_URL = process.env.SHOPIFY_APP_URL || '';
 
 /**
- * Build the Shopify OAuth authorization URL.
+ * Generate a cryptographically secure OAuth nonce.
+ */
+export function generateOAuthNonce(): string {
+  return randomBytes(16).toString('hex');
+}
+
+/**
+ * Verify the OAuth nonce via HMAC (stateless: nonce is signed with app secret).
+ */
+export function signNonce(nonce: string): string {
+  return createHmac('sha256', SHOPIFY_API_SECRET).update(nonce).digest('hex').substring(0, 16);
+}
+
+/**
+ * Build the Shopify OAuth authorization URL with signed nonce.
  */
 export function buildAuthUrl(shop: string): string {
   const redirectUri = `${SHOPIFY_APP_URL}/api/auth/callback`;
-  const nonce = Date.now().toString(36);
-  return `https://${shop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SHOPIFY_SCOPES}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${nonce}`;
+  const nonce = generateOAuthNonce();
+  const signed = `${nonce}.${signNonce(nonce)}`;
+  return `https://${shop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SHOPIFY_SCOPES}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${signed}`;
+}
+
+/**
+ * Verify the OAuth state parameter (nonce + signature).
+ */
+export function verifyOAuthState(state: string): boolean {
+  const parts = state.split('.');
+  if (parts.length !== 2) return false;
+  const [nonce, sig] = parts;
+  const expected = signNonce(nonce);
+  try {
+    return timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
+  } catch { return false; }
 }
 
 /**

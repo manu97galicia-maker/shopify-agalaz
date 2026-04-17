@@ -80,9 +80,6 @@
   var garmentImage = '{{ product.featured_image | image_url: width: 512 }}';
   var productId = '{{ product.id }}';
   var variantId = '{{ product.selected_or_first_available_variant.id }}';
-  var shopDomain = '{{ shop.permanent_domain }}';
-  var productType = {{ product.type | json }};
-  var productTitle = {{ product.title | json }};
   var lang = document.documentElement.lang === 'es' ? 'es' : 'en';
 
   if (!API_KEY || API_KEY === '') {
@@ -101,9 +98,8 @@
   function openModal() {
     var params = 'key=' + encodeURIComponent(API_KEY) + '&lang=' + lang;
     if (garmentImage) params += '&garment=' + encodeURIComponent(garmentImage);
-    if (shopDomain) params += '&shop=' + encodeURIComponent(shopDomain);
-    if (productType) params += '&ptype=' + encodeURIComponent(productType);
-    if (productTitle) params += '&ptitle=' + encodeURIComponent(productTitle);
+    if (productId) params += '&productId=' + encodeURIComponent(productId);
+    if (variantId) params += '&variantId=' + encodeURIComponent(variantId);
     iframe.src = APP_URL + '/embed?' + params;
     overlay.style.display = 'flex';
   }
@@ -126,10 +122,12 @@
     if (!e.data || !e.data.type) return;
     if (e.data.type === 'agalaz:close') closeModal();
     if (e.data.type === 'agalaz:addToCart') {
+      var targetVariant = e.data.variantId || variantId;
+      if (!targetVariant) return;
       fetch('/cart/add.js', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: variantId, quantity: 1 }),
+        body: JSON.stringify({ id: targetVariant, quantity: 1 }),
       }).then(function() {
         window.location.href = '/cart';
       });
