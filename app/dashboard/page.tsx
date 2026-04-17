@@ -537,7 +537,7 @@ export default function DashboardPage() {
             <div className="text-center space-y-1">
               <Zap size={24} className="text-indigo-500 mx-auto" />
               <h2 className="text-lg font-black text-slate-900">Start your 7-day free trial</h2>
-              <p className="text-slate-400 text-sm">200 renders included. Cancel anytime — no charge if you cancel within 7 days.</p>
+              <p className="text-slate-400 text-sm">50 renders included. Cancel anytime — no charge if you cancel within 7 days.</p>
             </div>
             <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 space-y-2">
               <div className="flex justify-between text-sm">

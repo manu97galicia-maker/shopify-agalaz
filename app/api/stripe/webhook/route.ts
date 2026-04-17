@@ -51,11 +51,12 @@ export async function POST(req: NextRequest) {
         const subscriptionId = session.subscription as string;
 
         if (partnerId && subscriptionId) {
-          const credits = partnerPlan === 'growth' ? 1000 : 200;
+          const fullCredits = partnerPlan === 'growth' ? 1000 : 200;
+          const credits = isTrial ? 50 : fullCredits;
           const updateData: Record<string, any> = {
             plan: partnerPlan,
             credits_remaining: credits,
-            credits_monthly_limit: credits,
+            credits_monthly_limit: fullCredits,
             stripe_subscription_id: subscriptionId,
             stripe_customer_id: session.customer as string,
             is_active: true,
