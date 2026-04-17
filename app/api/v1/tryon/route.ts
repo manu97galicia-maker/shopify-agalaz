@@ -17,9 +17,21 @@ function detectMimeType(base64: string): string | null {
   return 'image/jpeg';
 }
 
+function isAllowedOrigin(origin: string): boolean {
+  if (!origin) return false;
+  try {
+    const host = new URL(origin).hostname;
+    return host.endsWith('.myshopify.com')
+      || host.endsWith('.agalaz.com') || host === 'agalaz.com'
+      || host.endsWith('.vercel.app')
+      || host === 'localhost';
+  } catch { return false; }
+}
+
 function corsHeaders(origin?: string | null) {
+  const allowed = origin && isAllowedOrigin(origin) ? origin : 'https://agalaz.com';
   return {
-    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyHmac, exchangeToken, isValidShopDomain } from '@/lib/shopify';
+import { verifyHmac, exchangeToken, isValidShopDomain, verifyOAuthState } from '@/lib/shopify';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { generateApiKey } from '@/lib/partners';
 import { triggerCatalogSync } from '@/lib/triggerCatalogSync';
@@ -20,6 +20,12 @@ export async function GET(request: NextRequest) {
   // Verify HMAC
   if (!verifyHmac(params)) {
     return NextResponse.json({ error: 'HMAC verification failed' }, { status: 403 });
+  }
+
+  // Verify OAuth state nonce (CSRF protection)
+  const state = params.state || '';
+  if (!verifyOAuthState(state)) {
+    return NextResponse.json({ error: 'Invalid OAuth state' }, { status: 403 });
   }
 
   try {
@@ -133,7 +139,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Auth callback error:', error?.message);
     return NextResponse.json(
-      { error: 'Authentication failed: ' + (error?.message || 'unknown') },
+      { error: 'Authentication failed. Please try again.' },
       { status: 500 }
     );
   }
