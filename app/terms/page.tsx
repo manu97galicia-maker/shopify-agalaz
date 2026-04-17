@@ -7,7 +7,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-white py-16 px-4">
       <div className="max-w-2xl mx-auto prose prose-slate prose-sm">
         <h1 className="text-2xl font-black text-slate-900">Terms of Service</h1>
-        <p className="text-slate-400 text-xs">Last updated: March 28, 2026</p>
+        <p className="text-slate-400 text-xs">Last updated: April 17, 2026</p>
 
         <h2>1. Service Description</h2>
         <p>
@@ -25,11 +25,15 @@ export default function TermsPage() {
 
         <h2>3. Plans & Billing</h2>
         <ul>
-          <li><strong>Trial</strong>: 5 free renders upon installation.</li>
-          <li><strong>Starter</strong>: €150/month — 200 renders/month.</li>
-          <li><strong>Growth</strong>: €499/month — 1,000 renders/month.</li>
-          <li>Billing is handled via Stripe. Subscriptions renew monthly.</li>
+          <li><strong>Free trial</strong>: 7 days with 50 renders. Requires a valid payment method.
+            Available once per store. If not cancelled before the trial ends, the Starter plan
+            activates automatically.</li>
+          <li><strong>Starter</strong>: 149€/month — 200 renders/month.</li>
+          <li><strong>Growth</strong>: 499€/month — 1,000 renders/month.</li>
+          <li>Billing is handled via Stripe. Subscriptions renew monthly on the billing date.</li>
           <li>Unused credits do not roll over to the next month.</li>
+          <li>Merchants can cancel at any time from the Stripe customer portal. Cancellation
+            takes effect at the end of the current billing period.</li>
           <li>Refunds are handled on a case-by-case basis.</li>
         </ul>
 
