@@ -78,6 +78,10 @@
   var API_KEY = {{ block.settings.api_key | json }};
   var APP_URL = {{ block.settings.app_url | json }};
   var garmentImage = '{{ product.featured_image | image_url: width: 512 }}';
+  var shopDomain = '{{ shop.permanent_domain }}';
+  var productType = {{ product.type | json }};
+  var productTags = {{ product.tags | json }};
+  var productTitle = {{ product.title | json }};
   var lang = document.documentElement.lang === 'es' ? 'es' : 'en';
 
   if (!API_KEY || API_KEY === '') {
@@ -98,6 +102,9 @@
   function openModal() {
     var params = 'key=' + encodeURIComponent(API_KEY) + '&lang=' + lang;
     if (garmentImage) params += '&garment=' + encodeURIComponent(garmentImage);
+    if (shopDomain) params += '&shop=' + encodeURIComponent(shopDomain);
+    if (productType) params += '&ptype=' + encodeURIComponent(productType);
+    if (productTitle) params += '&ptitle=' + encodeURIComponent(productTitle);
     iframe.src = APP_URL + '/embed?' + params;
     overlay.style.display = 'flex';
   }

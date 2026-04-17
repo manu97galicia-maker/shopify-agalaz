@@ -22,6 +22,12 @@ export default function EmbedPage() {
   const [availableSizes, setAvailableSizes] = useState<string[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [shopDomain, setShopDomain] = useState('');
+  const [productType, setProductType] = useState('');
+  const [productTitle, setProductTitle] = useState('');
+  const [compliment, setCompliment] = useState('');
+  const [crossSellMessage, setCrossSellMessage] = useState('');
+  const [recommendations, setRecommendations] = useState<Array<{id: number; title: string; image: string; url: string; price: string}>>([]);
 
   const userRef = useRef<HTMLInputElement>(null);
   const garmentRef = useRef<HTMLInputElement>(null);
@@ -93,6 +99,9 @@ export default function EmbedPage() {
     if (sizes) setAvailableSizes(sizes.split(',').filter(Boolean));
     const colors = params.get('colors');
     if (colors) setAvailableColors(colors.split(',').filter(Boolean));
+    setShopDomain(params.get('shop') || '');
+    setProductType(params.get('ptype') || '');
+    setProductTitle(params.get('ptitle') || '');
   }, []);
 
   const [garmentError, setGarmentError] = useState(false);
@@ -270,6 +279,17 @@ export default function EmbedPage() {
         setResultImage(data.image);
         setStep('result');
         window.parent.postMessage({ type: 'agalaz:result', image: data.image }, '*');
+        // Fetch cross-sell recommendations
+        if (shopDomain) {
+          fetch(`/api/v1/recommendations?shop=${encodeURIComponent(shopDomain)}&ptype=${encodeURIComponent(productType)}&lang=${lang}`)
+            .then(r => r.json())
+            .then(rec => {
+              if (rec.compliment) setCompliment(rec.compliment);
+              if (rec.crossSellMessage) setCrossSellMessage(rec.crossSellMessage);
+              if (rec.recommendations?.length) setRecommendations(rec.recommendations);
+            })
+            .catch(() => {});
+        }
       } else {
         setError(t.errorGeneric);
       }
@@ -310,6 +330,9 @@ export default function EmbedPage() {
     setCurrentSize(null);
     setPreviewSize(null);
     setSelectedColor(null);
+    setCompliment('');
+    setCrossSellMessage('');
+    setRecommendations([]);
     setError(null);
     setStep('upload');
   }
@@ -564,6 +587,44 @@ export default function EmbedPage() {
                       <><Sparkles size={16} /> {t.regenerate}</>
                     )}
                   </button>
+                )}
+
+                {/* Compliment + Cross-sell recommendations */}
+                {compliment && (
+                  <div className={`${glass} p-5 space-y-3`}>
+                    <p className="text-[14px] font-semibold text-white/90 text-center leading-relaxed">{compliment}</p>
+                  </div>
+                )}
+
+                {recommendations.length > 0 && (
+                  <div className={`${glass} p-5 space-y-3`}>
+                    <p className="text-[12px] font-semibold text-white/40 uppercase tracking-[0.08em]">
+                      {crossSellMessage}
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {recommendations.map((rec) => (
+                        <a
+                          key={rec.id}
+                          href={rec.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-xl overflow-hidden ring-1 ring-white/[0.08] hover:ring-white/30 transition-all group"
+                        >
+                          <div className="aspect-square overflow-hidden">
+                            <img
+                              src={rec.image}
+                              alt={rec.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          </div>
+                          <div className="p-1.5 bg-white/[0.06]">
+                            <p className="text-[9px] font-medium text-white/60 truncate">{rec.title}</p>
+                            <p className="text-[9px] font-bold text-white/80">${rec.price}</p>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
