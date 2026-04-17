@@ -43,24 +43,34 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      // Partner subscription activated
+      // Partner subscription activated (with or without trial)
       if (session.metadata?.type === 'partner_subscription') {
         const partnerId = session.metadata.partner_id;
         const partnerPlan = session.metadata.partner_plan;
+        const isTrial = session.metadata.is_trial === 'true';
         const subscriptionId = session.subscription as string;
 
         if (partnerId && subscriptionId) {
           const credits = partnerPlan === 'growth' ? 1000 : 200;
-          await admin.from('partners').update({
+          const updateData: Record<string, any> = {
             plan: partnerPlan,
             credits_remaining: credits,
             credits_monthly_limit: credits,
             stripe_subscription_id: subscriptionId,
             stripe_customer_id: session.customer as string,
+            is_active: true,
             updated_at: new Date().toISOString(),
-          }).eq('id', partnerId);
+          };
 
-          console.log(`Partner subscription activated: ${partnerId} (${partnerPlan}, ${credits} credits/month)`);
+          if (isTrial) {
+            const trialEnd = new Date();
+            trialEnd.setDate(trialEnd.getDate() + 7);
+            updateData.trial_ends_at = trialEnd.toISOString();
+          }
+
+          await admin.from('partners').update(updateData).eq('id', partnerId);
+
+          console.log(`Partner subscription activated: ${partnerId} (${partnerPlan}, ${credits} credits, trial=${isTrial})`);
         }
         break;
       }
