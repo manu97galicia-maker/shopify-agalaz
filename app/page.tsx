@@ -50,15 +50,11 @@ export default function HomePage() {
           <span className="flex items-center gap-2"><Check size={16} className="text-emerald-500" /> 60s results</span>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div className="flex justify-center">
           <a href={APP_INSTALL_URL}
             className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors">
             <Store size={16} /> Install on Shopify
           </a>
-          <Link href="/embed?lang=en&sizes=XS,S,M,L,XL"
-            className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-bold hover:bg-slate-200 transition-colors">
-            <Camera size={16} /> See Demo
-          </Link>
         </div>
       </div>
 
