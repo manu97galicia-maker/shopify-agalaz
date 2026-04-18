@@ -722,7 +722,7 @@ export default function DashboardPage() {
 
         {/* ─── Support ─── */}
         <p className="text-center text-xs text-slate-300 py-2">
-          Need help? <a href="mailto:infoagalaz@gmail.com" className="text-indigo-500 font-bold">infoagalaz@gmail.com</a>
+          Need help? <a href="/support" target="_blank" rel="noopener" className="text-indigo-500 font-bold">Chat with assistant</a> · <a href="mailto:infoagalaz@gmail.com" className="text-indigo-500 font-bold">infoagalaz@gmail.com</a>
         </p>
       </div>
     </div>
