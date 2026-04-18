@@ -362,6 +362,36 @@ export default function DashboardPage() {
 
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
 
+        {/* ─── NEW FEATURE banner — visible when catalog not synced ─── */}
+        {profile.has_api_key && (!catalogStats || catalogStats.total === 0) && !syncing && (
+          <div className="p-5 bg-gradient-to-r from-violet-50 to-indigo-50 border-2 border-violet-200 rounded-xl space-y-3 animate-fade-in">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center shrink-0">
+                <Sparkles size={18} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-black text-slate-900">New: Smart Cross-Sell Recommendations</h3>
+                  <span className="px-2 py-0.5 bg-violet-600 text-white text-[9px] font-black uppercase tracking-wider rounded-full">NEW</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  After a customer tries on a product, Agalaz now shows <strong>personalized product recommendations</strong> from your catalog.
+                  For example: tried a shirt? We suggest matching pants. Tried a ring? We recommend earrings.
+                  Our AI picks the best matches by style, color, and category.
+                </p>
+                <p className="text-[10px] text-violet-600 font-bold mt-2">
+                  One-click setup: sync your catalog and cross-sell starts automatically.
+                </p>
+              </div>
+            </div>
+            <button onClick={handleSyncCatalog}
+              className="w-full py-3 bg-violet-600 text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-violet-700 transition-colors flex items-center justify-center gap-2">
+              <RefreshCw size={14} />
+              Activate Cross-Sell — Sync My Catalog
+            </button>
+          </div>
+        )}
+
         {/* ─── Welcome Banner (first install) ─── */}
         {apiKey && (
           <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-3">
