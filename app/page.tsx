@@ -144,8 +144,8 @@ export default function HomePage() {
           <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto">
             {[
               { name: 'Trial', price: 'Free', renders: '5 renders', desc: 'Test on your real store', cta: 'Install Free', href: APP_INSTALL_URL },
-              { name: 'Starter', price: '$149', period: '/mo', renders: '200 renders/mo', desc: 'For boutiques & small stores', popular: true, cta: 'Get Started', href: APP_INSTALL_URL },
-              { name: 'Growth', price: '$499', period: '/mo', renders: '1,000 renders/mo', desc: 'For high-volume stores', cta: 'Get Started', href: APP_INSTALL_URL },
+              { name: 'Starter', price: '€149', period: '/mo', renders: '200 renders/mo', desc: 'For boutiques & small stores', popular: true, cta: 'Get Started', href: APP_INSTALL_URL },
+              { name: 'Growth', price: '€499', period: '/mo', renders: '1,000 renders/mo', desc: 'For high-volume stores', cta: 'Get Started', href: APP_INSTALL_URL },
             ].map((plan, i) => (
               <div key={i} className={`relative bg-white p-6 rounded-2xl border-2 flex flex-col ${plan.popular ? 'border-indigo-600 shadow-lg shadow-indigo-100' : 'border-slate-200'}`}>
                 {plan.popular && (

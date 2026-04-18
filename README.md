@@ -58,7 +58,7 @@ public/
 | Plan | Price | Renders/month |
 |------|-------|---------------|
 | Free Trial | €0 | 5 |
-| Starter | €150/mo | 200 |
+| Starter | €149/mo | 200 |
 | Growth | €499/mo | 1,000 |
 
 ## Supported Items
