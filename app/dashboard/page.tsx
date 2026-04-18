@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Sparkles, Copy, Check, Zap, Shield, BarChart3, ExternalLink, ChevronDown, Store, RefreshCw, Package } from 'lucide-react';
+import { OnboardingWizard } from './OnboardingWizard';
 
 const PLANS = [
   { id: 'starter', name: 'Starter', price: 150, renders: 200, extra: '0.75', features: ['200 renders/month', 'Customizable widget'] },
@@ -361,6 +362,16 @@ export default function DashboardPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-5 py-6 space-y-5">
+
+        {/* ─── Onboarding Wizard (new merchants) ─── */}
+        <OnboardingWizard
+          shop={shop}
+          hasSubscription={isPaid}
+          isInTrial={isInTrial}
+          totalRenders={profile.total_renders || 0}
+          onStartTrial={() => { setSelectedPlan('starter'); handleSubscribe(); }}
+          isStartingTrial={isSubmitting}
+        />
 
         {/* ─── NEW FEATURE banner — visible when catalog not synced ─── */}
         {profile.has_api_key && (!catalogStats || catalogStats.total === 0) && !syncing && (
