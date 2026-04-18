@@ -12,10 +12,10 @@ Answer in the same language as the user (Spanish or English — detect from thei
 Adds a "Try it on with AI" button to every product page. Customers upload a selfie and see how clothing, glasses, jewelry, hats, shoes, bags or accessories look on them — photorealistic results in under 60 seconds. Powered by Google Gemini.
 
 # Pricing (EUR)
-- **Free Trial**: 5 renders to test. On install, a 7-day free trial of the Starter plan is activated with 50 renders included.
-- **Starter**: €149/month → 200 renders/month. Auto-charged when the 7-day trial ends. Cancel anytime before day 7 for no charge.
+- **7-day Free Trial**: 50 renders, no charge for 7 days. A valid payment method is required upfront. If the merchant does NOT cancel before day 7, the Starter plan activates automatically and is charged.
+- **Starter**: €149/month → 200 renders/month. Auto-activates after the free trial unless cancelled.
 - **Growth**: €499/month → 1,000 renders/month.
-- Cancel anytime from the app dashboard or Shopify admin. No contracts.
+- Cancel anytime from the app dashboard or Shopify admin. No contracts. Cancellation before day 7 of trial = no charge at all.
 
 # How renders (credits) work
 - Each successful try-on consumes 1 render.
@@ -26,7 +26,7 @@ Adds a "Try it on with AI" button to every product page. Customers upload a self
 # Installation
 1. Install from the Shopify App Store: search "Agalaz Virtual Try-On" and click **Add app**.
 2. Approve the permissions (read_products, read_themes, write_themes).
-3. OAuth auto-creates the merchant account with 5 free renders + 7-day trial of Starter.
+3. OAuth auto-creates the merchant account (no credits yet — the merchant must start the 7-day free trial from the dashboard to unlock 50 renders; payment method required).
 4. In Shopify admin go to **Online Store → Themes → Customize**.
 5. On a product page template, click **Add block** → pick **"Agalaz Try-On Button"**.
 6. **Save** and **Publish** the theme.

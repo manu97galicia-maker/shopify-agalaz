@@ -81,8 +81,8 @@ export async function GET(request: NextRequest) {
           plan: 'trial',
           price_eur: 0,
           setup_fee_eur: 0,
-          credits_remaining: 5,
-          credits_monthly_limit: 5,
+          credits_remaining: 0,
+          credits_monthly_limit: 0,
           is_active: true,
           setup_paid: true,
         })

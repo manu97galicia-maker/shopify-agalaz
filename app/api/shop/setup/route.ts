@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         api_key_hash: hash,
         api_key_prefix: prefix,
         is_active: true,
-        credits_remaining: 5,
+        credits_remaining: 0,
         updated_at: new Date().toISOString(),
       }).eq('id', existing.id);
 
@@ -64,8 +64,8 @@ export async function POST(req: NextRequest) {
         plan: 'trial',
         price_eur: 0,
         setup_fee_eur: 0,
-        credits_remaining: 5,
-        credits_monthly_limit: 5,
+        credits_remaining: 0,
+        credits_monthly_limit: 0,
         total_renders: 0,
         is_active: true,
         setup_paid: true,

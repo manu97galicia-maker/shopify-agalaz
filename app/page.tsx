@@ -46,7 +46,7 @@ export default function HomePage() {
 
         <div className="flex flex-wrap items-center justify-center gap-5 text-sm text-slate-500 font-medium mb-10">
           <span className="flex items-center gap-2"><Check size={16} className="text-emerald-500" /> Zero code setup</span>
-          <span className="flex items-center gap-2"><Check size={16} className="text-emerald-500" /> 5 free renders</span>
+          <span className="flex items-center gap-2"><Check size={16} className="text-emerald-500" /> 7-day free trial</span>
           <span className="flex items-center gap-2"><Check size={16} className="text-emerald-500" /> 60s results</span>
         </div>
 
@@ -143,7 +143,7 @@ export default function HomePage() {
           <p className="text-slate-400 text-sm text-center mb-12">No credit card required. Cancel anytime.</p>
           <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto">
             {[
-              { name: 'Trial', price: 'Free', renders: '5 renders', desc: 'Test on your real store', cta: 'Install Free', href: APP_INSTALL_URL },
+              { name: 'Free Trial', price: '€0', period: '/7 days', renders: '50 renders', desc: 'Payment method required. Cancel anytime before day 7.', cta: 'Start Free Trial', href: APP_INSTALL_URL },
               { name: 'Starter', price: '€149', period: '/mo', renders: '200 renders/mo', desc: 'For boutiques & small stores', popular: true, cta: 'Get Started', href: APP_INSTALL_URL },
               { name: 'Growth', price: '€499', period: '/mo', renders: '1,000 renders/mo', desc: 'For high-volume stores', cta: 'Get Started', href: APP_INSTALL_URL },
             ].map((plan, i) => (

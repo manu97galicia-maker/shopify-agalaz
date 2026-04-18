@@ -397,7 +397,7 @@ export default function DashboardPage() {
           <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-3">
             <div className="flex items-center gap-2.5">
               <Check size={18} className="text-emerald-600" />
-              <span className="font-bold text-emerald-900">App installed! 5 free renders ready.</span>
+              <span className="font-bold text-emerald-900">App installed! Start your 7-day free trial below to unlock 50 renders.</span>
             </div>
             <div>
               <label className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Your API Key (copy it now)</label>
@@ -699,7 +699,7 @@ export default function DashboardPage() {
             <h2 className="font-bold text-slate-900">FAQ</h2>
           </div>
           {[
-            { q: 'How does the trial work?', a: '5 free renders. Each customer try-on uses 1 credit. No credit card needed.' },
+            { q: 'How does the trial work?', a: '7-day free trial with 50 renders. Requires a payment method — if you don\'t cancel before day 7, the Starter plan (€149/mo, 200 renders/mo) activates automatically.' },
             { q: 'What can customers try on?', a: 'Clothing, glasses, jewelry, hats, shoes, bags — the AI detects the product type automatically.' },
             { q: 'Are customer photos stored?', a: 'No. Photos are processed in real-time and immediately discarded. Zero data retention.' },
             { q: 'How fast is rendering?', a: '10-30 seconds depending on image quality.' },

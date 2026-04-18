@@ -32,9 +32,9 @@ export async function POST(req: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    // Only set initial credits on first key generation
+    // First key generation: activate account but no free credits
+    // (credits come from Stripe trial activation → 50 renders for 7 days)
     if (isFirstKey) {
-      updateData.credits_remaining = 5;
       updateData.setup_paid = true;
     }
 
