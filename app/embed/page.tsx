@@ -761,8 +761,8 @@ export default function EmbedPage() {
       {/* Footer */}
       <div className="shrink-0 px-5 py-2.5 text-center">
         <a href="https://agalaz.com" target="_blank" rel="noopener noreferrer"
-          className="text-[10px] font-medium text-white/15 hover:text-white/40 transition-colors tracking-[0.02em]">
-          powered by agalaz
+          className="text-[11px] font-semibold text-white/60 hover:text-white transition-colors tracking-[0.02em]">
+          powered by <span className="text-white/80">agalaz.com</span>
         </a>
       </div>
 
