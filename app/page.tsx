@@ -62,7 +62,7 @@ export default function HomePage() {
         <div className="mt-14 flex justify-center">
           <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-xl shadow-slate-200/60 max-w-2xl w-full">
             <Image
-              src="/agalaz-try-on-button.png"
+              src="/agalaz-hero.png"
               alt="Agalaz Try-On button on a Shopify product page"
               width={1200}
               height={720}
