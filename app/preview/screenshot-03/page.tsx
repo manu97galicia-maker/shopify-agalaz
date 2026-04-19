@@ -19,16 +19,16 @@ export default function Screenshot03() {
             STEP 3
           </div>
           <h1 style={{
-            fontSize: '64px',
+            fontSize: '72px',
             fontWeight: 800,
             letterSpacing: '-0.02em',
             lineHeight: 1.05,
-            marginBottom: '12px',
+            marginBottom: '16px',
           }}>
             One try-on. <span style={{ color: '#C4B5FD' }}>Two sales.</span>
           </h1>
-          <p style={{ fontSize: '22px', color: 'rgba(255,255,255,0.65)', lineHeight: 1.5, maxWidth: '900px' }}>
-            After every try-on, Agalaz recommends matching products from other categories — and lets customers add to cart in one click.
+          <p style={{ fontSize: '22px', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, maxWidth: '900px' }}>
+            Smart cross-sell after every try-on. AI recommends matching products from your catalog — customers add both to cart in one click. Higher AOV, zero extra work.
           </p>
         </div>
 

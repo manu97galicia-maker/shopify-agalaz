@@ -42,7 +42,7 @@ export default function HomePage() {
         </h1>
 
         <p className="text-slate-500 text-lg max-w-xl mx-auto leading-relaxed mb-8">
-          Add an AI-powered try-on button to your product pages. Customers upload a photo and see how your products look on them instantly.
+          AI try-on + smart cross-sell. Customers see your products on themselves — then buy the matching item in one click.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-5 text-sm text-slate-500 font-medium mb-10">
