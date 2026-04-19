@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Sparkles, Check, ArrowRight, Shield, Zap, Store, Camera, ShoppingBag, Layers } from 'lucide-react';
+import { Sparkles, Check, ArrowRight, Shield, Zap, Store, Camera, ShoppingBag, Layers, Palette, CreditCard, RefreshCw, MessageCircle } from 'lucide-react';
 
 export default function HomePage() {
   const APP_INSTALL_URL = 'https://admin.shopify.com/?organization_id=210039164&no_redirect=true&redirect=/oauth/redirect_from_developer_dashboard?client_id%3D7523a3b92a09addee08857ff2f4e55f7';
@@ -196,6 +196,88 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Merchant Setup — step by step */}
+      <div className="bg-slate-900 py-16">
+        <div className="max-w-4xl mx-auto px-6">
+          <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider text-center mb-2">Setup in 3 minutes</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-white text-center mb-3">Everything you need to do</h2>
+          <p className="text-slate-400 text-sm text-center mb-12 max-w-xl mx-auto">
+            No developers, no code. Follow these 4 steps once and Agalaz works on every product automatically.
+          </p>
+
+          <div className="space-y-4">
+            {[
+              {
+                num: '1',
+                icon: <Store size={18} className="text-indigo-400" />,
+                title: 'Install the app',
+                time: '30 seconds',
+                desc: 'Click "Install on Shopify" above. Approve the permissions (read products & themes). Your Agalaz account is created automatically.',
+              },
+              {
+                num: '2',
+                icon: <Palette size={18} className="text-indigo-400" />,
+                title: 'Add the Try-On button to your theme',
+                time: '1 minute',
+                desc: 'In your Shopify admin → Online Store → Themes → Customize. On a product page, click "Add block" → select "Agalaz Try-On Button" → Save and Publish. Done once, works on every product.',
+              },
+              {
+                num: '3',
+                icon: <CreditCard size={18} className="text-indigo-400" />,
+                title: 'Start your 7-day free trial',
+                time: '30 seconds',
+                desc: 'Open the Agalaz dashboard inside Shopify → click "Start free trial" → enter payment method in Stripe Checkout. 50 renders unlocked. Cancel anytime before day 7 for no charge.',
+              },
+              {
+                num: '4',
+                icon: <RefreshCw size={18} className="text-violet-400" />,
+                title: 'Sync your catalog (for cross-sell)',
+                time: '1 minute',
+                desc: 'From the dashboard click "Activate Cross-Sell — Sync My Catalog". Agalaz reads your products, classifies each one by category, style and color using AI, and enables smart recommendations. Needed only for cross-sell. Try-on works without this step.',
+                highlight: true,
+              },
+            ].map((step, i) => (
+              <div
+                key={i}
+                className={`flex gap-5 p-5 rounded-xl border ${
+                  step.highlight
+                    ? 'bg-violet-500/10 border-violet-500/30'
+                    : 'bg-slate-800/50 border-slate-700'
+                }`}
+              >
+                <div className="shrink-0">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    step.highlight ? 'bg-violet-500/20' : 'bg-slate-700/50'
+                  }`}>
+                    <span className={`text-sm font-black ${step.highlight ? 'text-violet-300' : 'text-indigo-300'}`}>
+                      {step.num}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    {step.icon}
+                    <h3 className="text-white font-bold text-sm md:text-base">{step.title}</h3>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                      step.highlight ? 'bg-violet-500/20 text-violet-300' : 'bg-slate-700 text-slate-400'
+                    }`}>
+                      {step.time}
+                    </span>
+                  </div>
+                  <p className="text-slate-400 text-sm leading-relaxed">{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 p-5 bg-slate-800/50 border border-slate-700 rounded-xl text-center">
+            <p className="text-slate-300 text-sm">
+              Stuck on any step? <Link href="/support" className="text-indigo-400 font-bold hover:text-indigo-300">Chat with our assistant</Link> — it answers setup, pricing and troubleshooting questions 24/7.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Pricing */}
       <div className="bg-slate-50 py-16">
         <div className="max-w-4xl mx-auto px-6">
@@ -246,6 +328,16 @@ export default function HomePage() {
           <Sparkles size={16} /> Install on Shopify <ArrowRight size={14} />
         </a>
       </div>
+
+      {/* Floating chat bubble */}
+      <Link
+        href="/support"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 hover:shadow-xl transition-all group"
+        aria-label="Open support chat"
+      >
+        <MessageCircle size={18} className="group-hover:rotate-[-8deg] transition-transform" />
+        <span className="text-sm font-bold hidden sm:inline">Ask anything</span>
+      </Link>
 
       {/* Footer */}
       <footer className="border-t border-slate-100 py-8">
