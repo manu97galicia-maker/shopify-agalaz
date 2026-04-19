@@ -192,7 +192,24 @@
     return { sizes: sizes, colors: colors };
   }
 
-  function openModal(garmentUrl) {
+  function detectProductId() {
+    var scripts = document.querySelectorAll('script[type="application/json"]');
+    for (var i = 0; i < scripts.length; i++) {
+      try {
+        var json = JSON.parse(scripts[i].textContent || '');
+        var id = json.id || (json.product && json.product.id);
+        if (id) return String(id).replace(/[^0-9]/g, '');
+      } catch (e) { /* skip */ }
+    }
+    var meta = document.querySelector('meta[property="product:retailer_item_id"], meta[name="product:id"]');
+    if (meta) {
+      var mval = meta.getAttribute('content');
+      if (mval) return String(mval).replace(/[^0-9]/g, '');
+    }
+    return '';
+  }
+
+  function openModal(garmentUrl, productId) {
     if (document.getElementById(MODAL_ID)) return;
 
     var variants = extractProductVariants();
@@ -200,6 +217,7 @@
     if (garmentUrl) params += '&garment=' + encodeURIComponent(garmentUrl);
     if (variants.sizes.length) params += '&sizes=' + encodeURIComponent(variants.sizes.join(','));
     if (variants.colors.length) params += '&colors=' + encodeURIComponent(variants.colors.join(','));
+    if (productId) params += '&productId=' + encodeURIComponent(productId);
 
     var overlay = document.createElement('div');
     overlay.id = MODAL_ID;
@@ -247,7 +265,9 @@
       var rawGarment = container.getAttribute('data-garment') || '';
       var garmentUrl = resolveUrl(rawGarment);
       if (!garmentUrl) garmentUrl = resolveUrl(detectProductImage());
-      openModal(garmentUrl);
+      var productId = (container.getAttribute('data-product-id') || '').replace(/[^0-9]/g, '');
+      if (!productId) productId = detectProductId();
+      openModal(garmentUrl, productId);
     });
 
     container.appendChild(btn);
