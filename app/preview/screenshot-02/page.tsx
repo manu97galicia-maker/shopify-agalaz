@@ -35,7 +35,6 @@ export default function Screenshot02() {
           <ul style={{ fontSize: '18px', color: '#334155', lineHeight: 1.6, listStyle: 'none', padding: 0 }}>
             <li>✓ Works with clothing, glasses, jewelry, bags, shoes</li>
             <li>✓ No photo storage — processed and deleted instantly</li>
-            <li>✓ Powered by Google Gemini AI</li>
           </ul>
         </div>
 

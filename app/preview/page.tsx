@@ -1,56 +1,67 @@
-import Link from 'next/link';
+import FeatureBanner from './feature-banner/page';
+import Screenshot01 from './screenshot-01/page';
+import Screenshot02 from './screenshot-02/page';
+import Screenshot03 from './screenshot-03/page';
+import Screenshot04 from './screenshot-04/page';
 
-const ASSETS = [
-  { slug: 'feature-banner', title: 'Feature banner', dims: '1600 × 900', role: 'App listing header' },
-  { slug: 'screenshot-01', title: 'Screenshot 1 — Try-on button', dims: '1600 × 900', role: 'Product page integration' },
-  { slug: 'screenshot-02', title: 'Screenshot 2 — AI result', dims: '1600 × 900', role: 'Photorealistic try-on' },
-  { slug: 'screenshot-03', title: 'Screenshot 3 — Cross-sell', dims: '1600 × 900', role: 'Smart recommendations' },
-  { slug: 'screenshot-04', title: 'Screenshot 4 — Pricing', dims: '1600 × 900', role: 'Trial & plans' },
+const FRAMES = [
+  { id: 'feature-banner', label: 'Feature banner', role: 'App listing header', Component: FeatureBanner },
+  { id: 'screenshot-01', label: 'Screenshot 1 — Try-on button', role: 'Product page integration', Component: Screenshot01 },
+  { id: 'screenshot-02', label: 'Screenshot 2 — AI result', role: 'Photorealistic try-on', Component: Screenshot02 },
+  { id: 'screenshot-03', label: 'Screenshot 3 — Cross-sell', role: 'Smart recommendations', Component: Screenshot03 },
+  { id: 'screenshot-04', label: 'Screenshot 4 — Pricing', role: 'Trial & plans', Component: Screenshot04 },
 ];
 
-export default function PreviewIndex() {
+export default function PreviewAll() {
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-6">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-2xl font-black text-slate-900 mb-2">App Store Assets</h1>
-        <p className="text-sm text-slate-500 mb-8">
-          Each link opens a page rendered at exactly <strong>1600×900px</strong>. Capture each one as a PNG for the Shopify App Store listing.
+    <div style={{ background: '#0F172A', minHeight: '100vh', padding: '48px 0' }}>
+      <div style={{ maxWidth: '1600px', margin: '0 auto 40px', padding: '0 24px', color: 'white' }}>
+        <h1 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '8px' }}>App Store Assets</h1>
+        <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: '16px' }}>
+          All 5 frames at exact <strong style={{ color: 'white' }}>1600 × 900 px</strong>. Scroll down and capture each one.
         </p>
-
-        <ol className="space-y-3 mb-10">
-          {ASSETS.map((a, i) => (
-            <li key={a.slug}>
-              <Link
-                href={`/preview/${a.slug}`}
-                target="_blank"
-                className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl hover:border-indigo-400 transition-colors"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 bg-indigo-600 text-white rounded-lg text-xs font-black flex items-center justify-center">
-                      {i + 1}
-                    </span>
-                    <span className="font-bold text-slate-900">{a.title}</span>
-                  </div>
-                  <p className="text-xs text-slate-500 ml-8 mt-0.5">{a.role}</p>
-                </div>
-                <span className="text-xs text-slate-400 font-mono">{a.dims}</span>
-              </Link>
-            </li>
-          ))}
-        </ol>
-
-        <div className="p-5 bg-white border border-slate-200 rounded-xl space-y-3">
-          <h2 className="font-bold text-slate-900 text-sm">How to capture as PNG</h2>
-          <ol className="text-sm text-slate-600 space-y-2 list-decimal list-inside">
-            <li>Open each preview link in Chrome.</li>
-            <li>Press <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-xs font-mono">F12</kbd> to open DevTools.</li>
-            <li>Press <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-xs font-mono">Cmd+Shift+P</kbd> (Mac) or <kbd className="px-1.5 py-0.5 bg-slate-100 rounded text-xs font-mono">Ctrl+Shift+P</kbd> (Windows).</li>
-            <li>Type <em>Capture full size screenshot</em> → Enter.</li>
-            <li>Chrome downloads a PNG at the exact 1600×900 size.</li>
-            <li>Upload to Shopify Partner Dashboard → App Listing → Screenshots.</li>
-          </ol>
+        <div style={{
+          padding: '16px 20px',
+          background: 'rgba(255,255,255,0.05)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: '10px',
+          fontSize: '13px',
+          color: 'rgba(255,255,255,0.8)',
+          lineHeight: 1.7,
+        }}>
+          <strong style={{ color: 'white' }}>How to capture each frame as PNG:</strong><br />
+          Right-click the frame → <em>Inspect</em> → right-click the <code style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 6px', borderRadius: '4px' }}>&lt;div&gt;</code> with <code style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 6px', borderRadius: '4px' }}>width: 1600px</code> → <em>Capture node screenshot</em>. Chrome saves a PNG at exact 1600×900.
         </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '40px' }}>
+        {FRAMES.map(({ id, label, role, Component }, i) => (
+          <div key={id} id={id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', color: 'white', paddingLeft: '4px' }}>
+              <span style={{
+                width: '24px',
+                height: '24px',
+                background: '#4F46E5',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 900,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                {i + 1}
+              </span>
+              <span style={{ fontSize: '14px', fontWeight: 700 }}>{label}</span>
+              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>· {role}</span>
+            </div>
+            <div style={{
+              boxShadow: '0 30px 80px rgba(0,0,0,0.4)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}>
+              <Component />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
