@@ -56,25 +56,61 @@ export default function TermsPage() {
 
         <h2>6. Limitation of Liability</h2>
         <p>
-          The App is provided &quot;as is&quot;. We are not liable for any damages arising from
-          the use of AI-generated images, including but not limited to inaccurate fit
-          representations, lost sales, or customer complaints based on try-on results.
+          The App is provided &quot;as is&quot; and &quot;as available&quot;, without warranties of
+          any kind, express or implied. To the maximum extent permitted by applicable law:
+        </p>
+        <ul>
+          <li>
+            Our total aggregate liability to the merchant arising out of or relating to this
+            agreement or the use of the App — whether in contract, tort (including negligence),
+            warranty, or otherwise — shall not exceed the total amount paid by the merchant to
+            Agalaz in the <strong>three (3) months</strong> preceding the event giving rise to
+            the claim.
+          </li>
+          <li>
+            We shall not be liable for any indirect, incidental, special, consequential, or
+            punitive damages, including but not limited to loss of profits, revenue, goodwill,
+            data, or business opportunities, even if advised of the possibility of such damages.
+          </li>
+          <li>
+            We are not responsible for inaccurate fit or color representations in AI-generated
+            images, customer dissatisfaction with try-on results, returns, or third-party service
+            outages (Shopify, Stripe, Google, Supabase, Vercel).
+          </li>
+          <li>
+            Nothing in these terms excludes liability that cannot be excluded under applicable
+            mandatory law (e.g., gross negligence, wilful misconduct, death, personal injury, or
+            fraud).
+          </li>
+        </ul>
+
+        <h2>7. Data Processing Agreement (DPA)</h2>
+        <p>
+          When you install the App, you (as Controller under GDPR) and Agalaz (as Processor)
+          automatically enter into our Data Processing Agreement, which forms an integral part of
+          these Terms. The DPA governs the processing of personal data (including customer photos
+          and merchant data) and lists our sub-processors.
+        </p>
+        <p>
+          You can read and download the DPA at:{' '}
+          <a href="/dpa">agalaz-virtual-tryon.vercel.app/dpa</a>. The DPA may be updated from time
+          to time; continued use of the App after changes constitutes acceptance of the updated DPA.
         </p>
 
-        <h2>7. Termination</h2>
+        <h2>8. Termination</h2>
         <p>
           Either party may terminate the service at any time. Merchants can uninstall the App
           from their Shopify admin. We may terminate accounts that violate these terms.
           Upon termination, access tokens are revoked and account data is deactivated.
         </p>
 
-        <h2>8. Changes to Terms</h2>
+        <h2>9. Changes to Terms</h2>
         <p>
           We may update these terms from time to time. Continued use of the App after
           changes constitutes acceptance of the updated terms.
         </p>
 
-        <h2>9. Contact</h2>
+        <h2>10. Contact</h2>
         <p>
           For questions about these terms, contact us at:{' '}
           <a href="mailto:infoagalaz@gmail.com">infoagalaz@gmail.com</a>
