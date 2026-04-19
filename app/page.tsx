@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Sparkles, Check, ArrowRight, Shield, Zap, Store, Camera, ShoppingBag } from 'lucide-react';
+import Image from 'next/image';
+import { Sparkles, Check, ArrowRight, Shield, Zap, Store, Camera, ShoppingBag, Layers } from 'lucide-react';
 
 export default function HomePage() {
   const APP_INSTALL_URL = 'https://admin.shopify.com/?organization_id=210039164&no_redirect=true&redirect=/oauth/redirect_from_developer_dashboard?client_id%3D7523a3b92a09addee08857ff2f4e55f7';
@@ -55,6 +56,20 @@ export default function HomePage() {
             className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors">
             <Store size={16} /> Install on Shopify
           </a>
+        </div>
+
+        {/* Hero image — button shown on product page */}
+        <div className="mt-14 flex justify-center">
+          <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-xl shadow-slate-200/60 max-w-2xl w-full">
+            <Image
+              src="/agalaz-try-on-button.png"
+              alt="Agalaz Try-On button on a Shopify product page"
+              width={1200}
+              height={720}
+              className="w-full h-auto"
+              priority
+            />
+          </div>
         </div>
       </div>
 
@@ -127,6 +142,56 @@ export default function HomePage() {
                 <p className="text-slate-500 text-sm leading-relaxed">{f.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Cross-sell */}
+      <div className="bg-white py-16">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+            <div className="order-2 md:order-1">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-50 rounded-full mb-4">
+                <Layers size={14} className="text-violet-600" />
+                <span className="text-[11px] font-bold text-violet-600 uppercase tracking-wider">Smart Cross-Sell</span>
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight leading-tight mb-4">
+                One try-on. <span className="text-violet-600">Two sales.</span>
+              </h2>
+              <p className="text-slate-500 text-base leading-relaxed mb-5">
+                After a customer tries on a product, Agalaz instantly recommends a matching item from a different category in your catalog — and lets them add it to cart in one click.
+              </p>
+              <ul className="space-y-2.5 mb-6">
+                <li className="flex items-start gap-2.5 text-sm text-slate-600">
+                  <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                  <span>Tried a <strong>shirt</strong>? Suggests matching <strong>pants</strong>.</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-slate-600">
+                  <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                  <span>Tried a <strong>ring</strong>? Suggests matching <strong>earrings</strong>.</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-slate-600">
+                  <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                  <span>AI picks by style, color and category — only suggests products that actually exist in your store.</span>
+                </li>
+                <li className="flex items-start gap-2.5 text-sm text-slate-600">
+                  <Check size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                  <span>One-click setup — just sync your catalog from the dashboard.</span>
+                </li>
+              </ul>
+              <p className="text-xs text-slate-400 italic">Higher average order value with zero extra effort.</p>
+            </div>
+            <div className="order-1 md:order-2 flex justify-center">
+              <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-xl shadow-slate-200/60 max-w-sm w-full">
+                <Image
+                  src="/agalaz-cross-sell.png"
+                  alt="Cross-sell: tried a shirt, AI recommends matching outfit"
+                  width={800}
+                  height={1000}
+                  className="w-full h-auto"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
