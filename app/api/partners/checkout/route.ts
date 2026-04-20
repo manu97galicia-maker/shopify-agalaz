@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { shopifyGraphQL } from '@/lib/shopifyGraphQL';
+import { shouldUseTestCharge } from '@/lib/shopifyBilling';
 
 export const runtime = 'nodejs';
 
@@ -62,28 +63,10 @@ export async function POST(req: NextRequest) {
     const shop = req.nextUrl.searchParams.get('shop') || partner.shop_domain;
     const returnUrl = `${appUrl}/dashboard?shop=${encodeURIComponent(shop)}&subscribed=true`;
 
-    // test=true only when BOTH the env flag is set AND the shop is a Shopify
-    // Partner development store. Strict equality on the env avoids truthy
-    // surprises; shop plan check prevents accidental test charges on a real
-    // merchant if the env var is ever left on in production.
-    let isTestStore = false;
-    if (process.env.SHOPIFY_BILLING_TEST === 'true') {
-      try {
-        const shopInfoRes = await fetch(
-          `https://${partner.shop_domain}/admin/api/2024-10/shop.json`,
-          { headers: { 'X-Shopify-Access-Token': partner.shopify_access_token } },
-        );
-        if (shopInfoRes.ok) {
-          const info = (await shopInfoRes.json()).shop;
-          const planName = String(info?.plan_name || '').toLowerCase();
-          const planDisplay = String(info?.plan_display_name || '').toLowerCase();
-          isTestStore = planName.includes('partner') || planName.includes('dev')
-            || planDisplay.includes('developer') || planDisplay.includes('partner');
-        }
-      } catch (e: any) {
-        console.warn('Shop plan check failed, defaulting test=false:', e?.message?.substring(0, 100));
-      }
-    }
+    const isTestStore = await shouldUseTestCharge(
+      partner.shop_domain,
+      partner.shopify_access_token,
+    );
 
     const result = await shopifyGraphQL<{
       appSubscriptionCreate: {
