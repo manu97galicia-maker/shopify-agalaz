@@ -7,12 +7,13 @@ import { Sparkles, Send, Loader2, ArrowLeft, Mail } from 'lucide-react';
 type Message = { role: 'user' | 'assistant'; content: string };
 
 const SUGGESTED = [
-  'Cómo instalo el botón en mi tema',
-  'Cómo activo el cross-sell',
+  '¿Qué pasa cuando instalo la app?',
+  'Cómo añado el botón al tema',
   'Cómo empiezo la prueba gratis',
+  '¿Cómo funciona el cross-sell?',
   '¿Cuánto cuesta y qué incluye?',
   '¿Cómo cancelo antes del día 7?',
-  'How do I activate cross-sell?',
+  'What happens after install?',
   'How do I add the button to my theme?',
 ];
 

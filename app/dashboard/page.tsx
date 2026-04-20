@@ -373,32 +373,27 @@ export default function DashboardPage() {
           isStartingTrial={isSubmitting}
         />
 
-        {/* ─── NEW FEATURE banner — visible when catalog not synced ─── */}
+        {/* ─── Catalog sync banner — only if auto-sync didn't populate anything ─── */}
         {profile.has_api_key && (!catalogStats || catalogStats.total === 0) && !syncing && (
-          <div className="p-5 bg-gradient-to-r from-violet-50 to-indigo-50 border-2 border-violet-200 rounded-xl space-y-3 animate-fade-in">
+          <div className="p-5 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl space-y-3 animate-fade-in">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center shrink-0">
-                <Sparkles size={18} className="text-white" />
+              <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center shrink-0">
+                <RefreshCw size={18} className="text-white" />
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-black text-slate-900">New: Smart Cross-Sell Recommendations</h3>
-                  <span className="px-2 py-0.5 bg-violet-600 text-white text-[9px] font-black uppercase tracking-wider rounded-full">NEW</span>
-                </div>
+                <h3 className="text-sm font-black text-slate-900">Catalog sync pending</h3>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  After a customer tries on a product, Agalaz now shows <strong>personalized product recommendations</strong> from your catalog.
-                  For example: tried a shirt? We suggest matching pants. Tried a ring? We recommend earrings.
-                  Our AI picks the best matches by style, color, and category.
+                  We auto-sync your catalog on install to power cross-sell, but no products are registered yet. This usually means your store is still empty or the sync didn't finish. Tap below to run it now.
                 </p>
-                <p className="text-[10px] text-violet-600 font-bold mt-2">
-                  One-click setup: sync your catalog and cross-sell starts automatically.
+                <p className="text-[10px] text-amber-700 font-bold mt-2">
+                  Up to 500 products synced per run. New products you add later sync automatically.
                 </p>
               </div>
             </div>
             <button onClick={handleSyncCatalog}
-              className="w-full py-3 bg-violet-600 text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-violet-700 transition-colors flex items-center justify-center gap-2">
+              className="w-full py-3 bg-amber-500 text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-amber-600 transition-colors flex items-center justify-center gap-2">
               <RefreshCw size={14} />
-              Activate Cross-Sell — Sync My Catalog
+              Sync my catalog now
             </button>
           </div>
         )}
