@@ -1,78 +1,123 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import { createAdminClient } from '@/lib/supabaseAdmin';
+import { shopifyGraphQL } from '@/lib/shopifyGraphQL';
 
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY?.trim();
-  if (!key) throw new Error('STRIPE_SECRET_KEY is not set');
-  return new Stripe(key);
-}
+export const runtime = 'nodejs';
 
-const MONTHLY_PRICES = {
-  starter: process.env.STRIPE_PARTNER_STARTER_MONTHLY || '',
-  growth: process.env.STRIPE_PARTNER_GROWTH_MONTHLY || '',
-};
+const PLANS = {
+  starter: { name: 'Agalaz Starter', amount: 149, credits: 200, trialDays: 7 },
+  growth: { name: 'Agalaz Growth', amount: 499, credits: 1000, trialDays: 0 },
+} as const;
+
+const APP_SUBSCRIPTION_CREATE = `
+  mutation AppSubscriptionCreate(
+    $name: String!
+    $returnUrl: URL!
+    $trialDays: Int
+    $test: Boolean
+    $lineItems: [AppSubscriptionLineItemInput!]!
+  ) {
+    appSubscriptionCreate(
+      name: $name
+      returnUrl: $returnUrl
+      trialDays: $trialDays
+      test: $test
+      lineItems: $lineItems
+    ) {
+      appSubscription { id name status }
+      confirmationUrl
+      userErrors { field message }
+    }
+  }
+`;
 
 export async function POST(req: NextRequest) {
   try {
-    const { plan, partnerId, email } = await req.json();
-    const planKey = plan as keyof typeof MONTHLY_PRICES;
+    const { plan, partnerId } = await req.json();
+    const planKey = plan as keyof typeof PLANS;
 
-    if (!plan || !MONTHLY_PRICES[planKey]) {
+    if (!plan || !PLANS[planKey]) {
       return NextResponse.json({ error: 'Invalid plan. Use "starter" or "growth"' }, { status: 400 });
     }
-
-    if (!partnerId || !email) {
-      return NextResponse.json({ error: 'partnerId and email are required' }, { status: 400 });
+    if (!partnerId) {
+      return NextResponse.json({ error: 'partnerId is required' }, { status: 400 });
     }
 
-    const origin = req.headers.get('origin') || process.env.SHOPIFY_APP_URL || '';
-    const stripe = getStripe();
-
-    // Check if partner already has a subscription (upgrade, no trial)
-    const { createAdminClient } = await import('@/lib/supabaseAdmin');
     const admin = createAdminClient();
-    const { data: partnerData } = await admin
+    const { data: partner } = await admin
       .from('partners')
-      .select('stripe_subscription_id, plan')
+      .select('id, shop_domain, shopify_access_token, shopify_subscription_id, plan')
       .eq('id', partnerId)
       .single();
 
-    const isNewTrial = !partnerData?.stripe_subscription_id && (!partnerData?.plan || partnerData.plan === 'trial');
-
-    const sessionParams: any = {
-      mode: 'subscription',
-      payment_method_types: ['card'],
-      line_items: [{ price: MONTHLY_PRICES[planKey], quantity: 1 }],
-      success_url: `${origin}/dashboard?shop=${req.nextUrl.searchParams.get('shop') || ''}&subscribed=true`,
-      cancel_url: `${origin}/dashboard?shop=${req.nextUrl.searchParams.get('shop') || ''}&cancelled=true`,
-      customer_email: email,
-      client_reference_id: partnerId,
-      metadata: {
-        type: 'partner_subscription',
-        partner_id: partnerId,
-        partner_plan: plan,
-        is_trial: isNewTrial ? 'true' : 'false',
-      },
-    };
-
-    // 7-day free trial for new merchants subscribing to Starter
-    if (isNewTrial) {
-      sessionParams.subscription_data = {
-        trial_period_days: 7,
-        metadata: {
-          partner_id: partnerId,
-          partner_plan: plan,
-        },
-      };
+    if (!partner || !partner.shop_domain || !partner.shopify_access_token) {
+      return NextResponse.json({ error: 'Partner not installed or missing access token' }, { status: 404 });
     }
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    const config = PLANS[planKey];
+    const isNewTrial = !partner.shopify_subscription_id && (!partner.plan || partner.plan === 'trial');
+    const trialDays = planKey === 'starter' && isNewTrial ? config.trialDays : 0;
 
-    return NextResponse.json({ url: session.url });
-  } catch (error: any) {
-    console.error('Partner checkout error:', error?.message);
+    const appUrl = process.env.SHOPIFY_APP_URL || req.nextUrl.origin;
+    const shop = req.nextUrl.searchParams.get('shop') || partner.shop_domain;
+    const returnUrl = `${appUrl}/dashboard?shop=${encodeURIComponent(shop)}&subscribed=true`;
+
+    // test=true for Shopify development stores (no real charge). Detected by shop domain suffix.
+    // Also respect SHOPIFY_BILLING_TEST env var override.
+    const isTestStore = process.env.SHOPIFY_BILLING_TEST === 'true';
+
+    const result = await shopifyGraphQL<{
+      appSubscriptionCreate: {
+        appSubscription: { id: string; name: string; status: string } | null;
+        confirmationUrl: string | null;
+        userErrors: Array<{ field: string[]; message: string }>;
+      };
+    }>(
+      partner.shop_domain,
+      partner.shopify_access_token,
+      APP_SUBSCRIPTION_CREATE,
+      {
+        name: config.name,
+        returnUrl,
+        trialDays,
+        test: isTestStore,
+        lineItems: [
+          {
+            plan: {
+              appRecurringPricingDetails: {
+                price: { amount: config.amount, currencyCode: 'USD' },
+                interval: 'EVERY_30_DAYS',
+              },
+            },
+          },
+        ],
+      },
+    );
+
+    const data = result.appSubscriptionCreate;
+    if (data.userErrors && data.userErrors.length > 0) {
+      const msg = data.userErrors.map((e) => e.message).join('; ');
+      console.error('AppSubscriptionCreate errors:', msg);
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+    if (!data.confirmationUrl || !data.appSubscription) {
+      return NextResponse.json({ error: 'Failed to create subscription' }, { status: 500 });
+    }
+
+    // Persist the pending subscription id so the webhook can reconcile on activation
+    await admin
+      .from('partners')
+      .update({
+        shopify_subscription_id: data.appSubscription.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', partnerId);
+
+    return NextResponse.json({ url: data.confirmationUrl });
+  } catch (err: any) {
+    console.error('Partner checkout error:', err?.message);
     return NextResponse.json(
-      { error: error.message || 'Failed to create checkout session' },
+      { error: err.message?.substring(0, 300) || 'Failed to create subscription' },
       { status: 500 }
     );
   }

@@ -200,7 +200,6 @@ export default function DashboardPage() {
         body: JSON.stringify({
           plan: selectedPlan,
           partnerId: profile.id,
-          email: '', // Will be fetched from Stripe
         }),
       });
       const data = await res.json();
