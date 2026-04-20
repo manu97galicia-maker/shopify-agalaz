@@ -12,7 +12,7 @@ interface SyncStats {
   errors: number;
 }
 
-const TRIAL_MAX_PRODUCTS = 500;
+const MAX_PRODUCTS_PER_SYNC = 500;
 const CLASSIFY_MAX_PER_SYNC = 800;
 
 function parsePriceCents(price: string): number {
@@ -121,14 +121,7 @@ export async function syncShopifyCatalog(
   };
   const admin = createAdminClient();
 
-  const { data: partner } = await admin
-    .from('partners')
-    .select('plan')
-    .eq('id', partnerId)
-    .single();
-
-  const isTrial = !partner || partner.plan === 'trial';
-  const maxProducts = isTrial ? TRIAL_MAX_PRODUCTS : Infinity;
+  const maxProducts = MAX_PRODUCTS_PER_SYNC;
 
   const pendingClassification: Array<{
     rowId: string;
