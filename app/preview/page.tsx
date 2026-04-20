@@ -15,25 +15,6 @@ const FRAMES = [
 export default function PreviewAll() {
   return (
     <div style={{ background: '#0F172A', minHeight: '100vh', padding: '48px 0' }}>
-      <div style={{ maxWidth: '1600px', margin: '0 auto 40px', padding: '0 24px', color: 'white' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 800, marginBottom: '8px' }}>App Store Assets</h1>
-        <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, marginBottom: '16px' }}>
-          All 5 frames at exact <strong style={{ color: 'white' }}>1600 × 900 px</strong>. Scroll down and capture each one.
-        </p>
-        <div style={{
-          padding: '16px 20px',
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '10px',
-          fontSize: '13px',
-          color: 'rgba(255,255,255,0.8)',
-          lineHeight: 1.7,
-        }}>
-          <strong style={{ color: 'white' }}>How to capture each frame as PNG:</strong><br />
-          Right-click the frame → <em>Inspect</em> → right-click the <code style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 6px', borderRadius: '4px' }}>&lt;div&gt;</code> with <code style={{ background: 'rgba(255,255,255,0.1)', padding: '1px 6px', borderRadius: '4px' }}>width: 1600px</code> → <em>Capture node screenshot</em>. Chrome saves a PNG at exact 1600×900.
-        </div>
-      </div>
-
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '40px' }}>
         {FRAMES.map(({ id, label, role, Component }, i) => (
           <div key={id} id={id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
