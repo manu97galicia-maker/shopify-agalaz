@@ -62,9 +62,28 @@ export async function POST(req: NextRequest) {
     const shop = req.nextUrl.searchParams.get('shop') || partner.shop_domain;
     const returnUrl = `${appUrl}/dashboard?shop=${encodeURIComponent(shop)}&subscribed=true`;
 
-    // test=true for Shopify development stores (no real charge). Detected by shop domain suffix.
-    // Also respect SHOPIFY_BILLING_TEST env var override.
-    const isTestStore = process.env.SHOPIFY_BILLING_TEST === 'true';
+    // test=true only when BOTH the env flag is set AND the shop is a Shopify
+    // Partner development store. Strict equality on the env avoids truthy
+    // surprises; shop plan check prevents accidental test charges on a real
+    // merchant if the env var is ever left on in production.
+    let isTestStore = false;
+    if (process.env.SHOPIFY_BILLING_TEST === 'true') {
+      try {
+        const shopInfoRes = await fetch(
+          `https://${partner.shop_domain}/admin/api/2024-10/shop.json`,
+          { headers: { 'X-Shopify-Access-Token': partner.shopify_access_token } },
+        );
+        if (shopInfoRes.ok) {
+          const info = (await shopInfoRes.json()).shop;
+          const planName = String(info?.plan_name || '').toLowerCase();
+          const planDisplay = String(info?.plan_display_name || '').toLowerCase();
+          isTestStore = planName.includes('partner') || planName.includes('dev')
+            || planDisplay.includes('developer') || planDisplay.includes('partner');
+        }
+      } catch (e: any) {
+        console.warn('Shop plan check failed, defaulting test=false:', e?.message?.substring(0, 100));
+      }
+    }
 
     const result = await shopifyGraphQL<{
       appSubscriptionCreate: {
