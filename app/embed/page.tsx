@@ -371,7 +371,7 @@ export default function EmbedPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({ userImage, garmentUrl: rec.image }),
+        body: JSON.stringify({ userImage, garmentUrl: rec.image, lastRenderedImage: resultImage }),
       });
       const data = await res.json();
       if (!res.ok || !data.image) {
