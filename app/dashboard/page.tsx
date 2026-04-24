@@ -389,11 +389,12 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <button onClick={handleSyncCatalog}
-              className="w-full py-3 bg-amber-500 text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-amber-600 transition-colors flex items-center justify-center gap-2">
-              <RefreshCw size={14} />
-              Sync my catalog now
+            <button onClick={handleSyncCatalog} disabled={syncing}
+              className="w-full py-3 bg-amber-500 text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-amber-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+              <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+              {syncing ? 'Syncing…' : 'Sync my catalog now'}
             </button>
+            {error && <p className="text-xs text-red-600 font-bold text-center mt-2">{error}</p>}
           </div>
         )}
 

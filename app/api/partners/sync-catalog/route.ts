@@ -30,15 +30,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Shop mismatch' }, { status: 403 });
     }
 
-    // Cooldown to prevent abuse
+    // Cooldown to prevent abuse — but waive it if the merchant still has
+    // zero products synced (first-time setup where the auto-sync ran too
+    // early, before the merchant added products).
     if (partner.last_catalog_sync_at) {
-      const elapsed = Date.now() - new Date(partner.last_catalog_sync_at).getTime();
-      if (elapsed < COOLDOWN_MS) {
-        const waitMins = Math.ceil((COOLDOWN_MS - elapsed) / 60000);
-        return NextResponse.json({
-          error: `Sync cooldown — try again in ${waitMins} minute${waitMins > 1 ? 's' : ''}`,
-          retry_in_seconds: Math.ceil((COOLDOWN_MS - elapsed) / 1000),
-        }, { status: 429 });
+      const { count: productsCount } = await admin
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .eq('partner_id', partner.id);
+
+      if ((productsCount || 0) > 0) {
+        const elapsed = Date.now() - new Date(partner.last_catalog_sync_at).getTime();
+        if (elapsed < COOLDOWN_MS) {
+          const waitMins = Math.ceil((COOLDOWN_MS - elapsed) / 60000);
+          return NextResponse.json({
+            error: `Sync cooldown — try again in ${waitMins} minute${waitMins > 1 ? 's' : ''}`,
+            retry_in_seconds: Math.ceil((COOLDOWN_MS - elapsed) / 1000),
+          }, { status: 429 });
+        }
       }
     }
 
