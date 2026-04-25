@@ -91,6 +91,7 @@ export default function DashboardPage() {
   const [selectedPlan, setSelectedPlan] = useState('growth');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [generatingKey, setGeneratingKey] = useState(false);
   const [catalogStats, setCatalogStats] = useState<{ total: number; classified: number; last_synced: string | null } | null>(null);
@@ -224,7 +225,7 @@ export default function DashboardPage() {
   async function handleSyncCatalog() {
     if (!profile || syncing) return;
     setSyncing(true);
-    setError(null);
+    setSyncError(null);
     try {
       const res = await fetch('/api/partners/sync-catalog', {
         method: 'POST',
@@ -233,7 +234,7 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Sync failed');
+        setSyncError(data.error || 'Sync failed');
         setSyncing(false);
         return;
       }
@@ -242,7 +243,7 @@ export default function DashboardPage() {
         await loadCatalogStats(profile.id);
       }
     } catch {
-      setError('Something went wrong');
+      setSyncError('Something went wrong');
     }
     setSyncing(false);
   }
@@ -394,7 +395,7 @@ export default function DashboardPage() {
               <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
               {syncing ? 'Syncing…' : 'Sync my catalog now'}
             </button>
-            {error && <p className="text-xs text-red-600 font-bold text-center mt-2">{error}</p>}
+            {syncError && <p className="text-xs text-red-600 font-bold text-center mt-2">{syncError}</p>}
           </div>
         )}
 
