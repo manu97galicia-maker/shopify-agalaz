@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { shopifyGraphQL } from '@/lib/shopifyGraphQL';
 import { shouldUseTestCharge } from '@/lib/shopifyBilling';
+import { requireShopAuth } from '@/lib/requireShopAuth';
 
 export const runtime = 'nodejs';
 
@@ -33,22 +34,22 @@ const APP_SUBSCRIPTION_CREATE = `
 `;
 
 export async function POST(req: NextRequest) {
+  const auth = requireShopAuth(req);
+  if (!auth.ok) return auth.response;
+
   try {
-    const { plan, partnerId } = await req.json();
+    const { plan } = await req.json();
     const planKey = plan as keyof typeof PLANS;
 
     if (!plan || !PLANS[planKey]) {
       return NextResponse.json({ error: 'Invalid plan. Use "starter" or "growth"' }, { status: 400 });
-    }
-    if (!partnerId) {
-      return NextResponse.json({ error: 'partnerId is required' }, { status: 400 });
     }
 
     const admin = createAdminClient();
     const { data: partner } = await admin
       .from('partners')
       .select('id, shop_domain, shopify_access_token, shopify_subscription_id, plan')
-      .eq('id', partnerId)
+      .eq('shop_domain', auth.shop)
       .single();
 
     if (!partner || !partner.shop_domain || !partner.shopify_access_token) {
@@ -60,8 +61,7 @@ export async function POST(req: NextRequest) {
     const trialDays = planKey === 'starter' && isNewTrial ? config.trialDays : 0;
 
     const appUrl = process.env.SHOPIFY_APP_URL || req.nextUrl.origin;
-    const shop = req.nextUrl.searchParams.get('shop') || partner.shop_domain;
-    const returnUrl = `${appUrl}/dashboard?shop=${encodeURIComponent(shop)}&subscribed=true`;
+    const returnUrl = `${appUrl}/dashboard?shop=${encodeURIComponent(partner.shop_domain)}&subscribed=true`;
 
     const isTestStore = await shouldUseTestCharge(
       partner.shop_domain,
@@ -106,14 +106,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to create subscription' }, { status: 500 });
     }
 
-    // Persist the pending subscription id so the webhook can reconcile on activation
     await admin
       .from('partners')
       .update({
         shopify_subscription_id: data.appSubscription.id,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', partnerId);
+      .eq('id', partner.id);
 
     return NextResponse.json({ url: data.confirmationUrl });
   } catch (err: any) {

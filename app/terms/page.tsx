@@ -30,10 +30,12 @@ export default function TermsPage() {
             activates automatically.</li>
           <li><strong>Starter</strong>: 149€/month — 200 renders/month.</li>
           <li><strong>Growth</strong>: 499€/month — 1,000 renders/month.</li>
-          <li>Billing is handled via Stripe. Subscriptions renew monthly on the billing date.</li>
+          <li>Billing is handled by Shopify via the Shopify Billing API. Subscriptions renew every 30 days
+            on the activation date and appear on your Shopify invoice.</li>
           <li>Unused credits do not roll over to the next month.</li>
-          <li>Merchants can cancel at any time from the Stripe customer portal. Cancellation
-            takes effect at the end of the current billing period.</li>
+          <li>Merchants can cancel at any time from <strong>Settings → Billing → Subscriptions</strong> in
+            their Shopify admin, or by uninstalling the app. Cancellation takes effect at the end of the
+            current billing period.</li>
           <li>Refunds are handled on a case-by-case basis.</li>
         </ul>
 
@@ -75,7 +77,7 @@ export default function TermsPage() {
           <li>
             We are not responsible for inaccurate fit or color representations in AI-generated
             images, customer dissatisfaction with try-on results, returns, or third-party service
-            outages (Shopify, Stripe, Google, Supabase, Vercel).
+            outages (Shopify, Google, Supabase, Vercel).
           </li>
           <li>
             Nothing in these terms excludes liability that cannot be excluded under applicable

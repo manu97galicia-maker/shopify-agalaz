@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyHmac, exchangeToken, isValidShopDomain, verifyOAuthState } from '@/lib/shopify';
+import { verifyHmac, exchangeToken, isValidShopDomain, verifyOAuthState, OAUTH_NONCE_COOKIE } from '@/lib/shopify';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { generateApiKey } from '@/lib/partners';
 import { triggerCatalogSync } from '@/lib/triggerCatalogSync';
@@ -22,9 +22,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'HMAC verification failed' }, { status: 403 });
   }
 
-  // Verify OAuth state nonce (CSRF protection)
+  // Verify OAuth state nonce (CSRF protection) — must match cookie set during /api/auth
   const state = params.state || '';
-  if (!verifyOAuthState(state)) {
+  const expectedNonce = request.cookies.get(OAUTH_NONCE_COOKIE)?.value;
+  if (!verifyOAuthState(state, expectedNonce)) {
     return NextResponse.json({ error: 'Invalid OAuth state' }, { status: 403 });
   }
 
@@ -120,6 +121,7 @@ export async function GET(request: NextRequest) {
         maxAge: 86400 * 30,
         path: '/',
       });
+      response.cookies.delete(OAUTH_NONCE_COOKIE);
       return response;
     }
 
@@ -135,6 +137,7 @@ export async function GET(request: NextRequest) {
       maxAge: 86400 * 30,
       path: '/',
     });
+    response.cookies.delete(OAUTH_NONCE_COOKIE);
     return response;
   } catch (error: any) {
     console.error('Auth callback error:', error?.message);

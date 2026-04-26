@@ -10,9 +10,8 @@ const PLANS = [
   { id: 'growth', name: 'Growth', price: 499, renders: 1000, extra: '0.50', features: ['1,000 renders/month', 'Customizable widget'], popular: true },
 ];
 
-const CREDITS_PACK_URL = 'https://buy.stripe.com/fZu6oHfZk1VC4BL8KJfYY0h';
 const CREDITS_PACK_AMOUNT = 20;
-const CREDITS_PACK_PRICE = '9.99€';
+const CREDITS_PACK_PRICE = '$9.99';
 
 interface PartnerProfile {
   id: string;
@@ -41,6 +40,15 @@ async function getShopifySessionToken(): Promise<string | null> {
     }
   } catch {}
   return null;
+}
+
+// Authenticated fetch — attaches App Bridge session token. All /api/partners/*
+// and /api/shop/setup endpoints require this.
+async function authFetch(input: string, init: RequestInit = {}): Promise<Response> {
+  const token = await getShopifySessionToken();
+  const headers = new Headers(init.headers || {});
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  return fetch(input, { ...init, headers });
 }
 
 // Extract shop from URL params, host param, or id_token
@@ -138,7 +146,7 @@ export default function DashboardPage() {
 
   async function loadProfile() {
     try {
-      const res = await fetch(`/api/partners/profile?shop=${encodeURIComponent(shop)}`);
+      const res = await authFetch('/api/partners/profile');
       if (res.ok) {
         const data = await res.json();
         setProfile(data.partner);
@@ -154,17 +162,15 @@ export default function DashboardPage() {
 
   async function autoSetupShop() {
     try {
-      const res = await fetch('/api/shop/setup', {
+      const res = await authFetch('/api/shop/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shop }),
       });
       const data = await res.json();
       if (data.api_key) {
         setApiKey(data.api_key);
       }
-      // Reload profile after setup
-      const profileRes = await fetch(`/api/partners/profile?shop=${encodeURIComponent(shop)}`);
+      const profileRes = await authFetch('/api/partners/profile');
       if (profileRes.ok) {
         const profileData = await profileRes.json();
         setProfile(profileData.partner);
@@ -192,16 +198,10 @@ export default function DashboardPage() {
     setIsSubmitting(true);
     setError(null);
     try {
-      const token = await getShopifySessionToken();
-      const authHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) authHeaders['Authorization'] = `Bearer ${token}`;
-      const res = await fetch(`/api/partners/checkout?shop=${encodeURIComponent(shop)}`, {
+      const res = await authFetch('/api/partners/checkout', {
         method: 'POST',
-        headers: authHeaders,
-        body: JSON.stringify({
-          plan: selectedPlan,
-          partnerId: profile.id,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: selectedPlan }),
       });
       const data = await res.json();
       if (data.url) {
@@ -215,9 +215,24 @@ export default function DashboardPage() {
     setIsSubmitting(false);
   }
 
-  async function loadCatalogStats(partnerId: string) {
+  async function handleBuyCredits() {
+    if (!profile) return;
     try {
-      const res = await fetch(`/api/partners/sync-catalog?partner_id=${encodeURIComponent(partnerId)}`);
+      const res = await authFetch('/api/partners/credits-purchase', { method: 'POST' });
+      const data = await res.json();
+      if (data.url) {
+        window.top ? window.top.location.href = data.url : window.location.href = data.url;
+      } else {
+        setError(data.error || 'Failed to start purchase');
+      }
+    } catch {
+      setError('Something went wrong');
+    }
+  }
+
+  async function loadCatalogStats(_partnerId: string) {
+    try {
+      const res = await authFetch('/api/partners/sync-catalog');
       if (res.ok) setCatalogStats(await res.json());
     } catch { /* ignore */ }
   }
@@ -227,10 +242,9 @@ export default function DashboardPage() {
     setSyncing(true);
     setSyncError(null);
     try {
-      const res = await fetch('/api/partners/sync-catalog', {
+      const res = await authFetch('/api/partners/sync-catalog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partner_id: profile.id, shop }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -253,10 +267,9 @@ export default function DashboardPage() {
     setGeneratingKey(true);
     setError(null);
     try {
-      const res = await fetch('/api/partners/generate-key', {
+      const res = await authFetch('/api/partners/generate-key', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partner_id: profile.id }),
       });
       const data = await res.json();
       if (data.api_key) {
@@ -521,9 +534,8 @@ export default function DashboardPage() {
         {/* ─── Quick Actions ─── */}
         {isPaid && (
           <div className="flex gap-3">
-            <a href={`${CREDITS_PACK_URL}?client_reference_id=${profile.id}`}
-              target="_blank" rel="noopener noreferrer"
-              className="flex-1 p-4 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 transition-all flex items-center gap-3">
+            <button onClick={handleBuyCredits}
+              className="flex-1 p-4 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 transition-all flex items-center gap-3 text-left">
               <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
                 <Zap size={16} className="text-indigo-600" />
               </div>
@@ -531,7 +543,7 @@ export default function DashboardPage() {
                 <p className="text-sm font-bold text-slate-900">Buy {CREDITS_PACK_AMOUNT} credits</p>
                 <p className="text-[10px] text-slate-400">{CREDITS_PACK_PRICE} one-time</p>
               </div>
-            </a>
+            </button>
             {profile.plan === 'starter' && (
               <button onClick={() => { setSelectedPlan('growth'); handleSubscribe(); }}
                 disabled={isSubmitting}
@@ -710,7 +722,7 @@ export default function DashboardPage() {
             { q: 'What can customers try on?', a: 'Clothing, glasses, jewelry, hats, shoes, bags — the AI detects the product type automatically.' },
             { q: 'Are customer photos stored?', a: 'No. Photos are processed in real-time and immediately discarded. Zero data retention.' },
             { q: 'How fast is rendering?', a: '10-30 seconds depending on image quality.' },
-            { q: 'Can I cancel?', a: 'Yes, anytime. Monthly subscriptions managed via Stripe.' },
+            { q: 'Can I cancel?', a: 'Yes, anytime. Open Settings → Billing → Subscriptions in your Shopify admin to manage or cancel. Uninstalling the app also cancels.' },
           ].map((faq, i) => (
             <div key={i}>
               <button onClick={() => setOpenFaq(openFaq === i ? null : i)}

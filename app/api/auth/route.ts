@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { buildAuthUrl, isValidShopDomain } from '@/lib/shopify';
+import { buildAuthUrl, isValidShopDomain, OAUTH_NONCE_COOKIE } from '@/lib/shopify';
 
 export async function GET(request: NextRequest) {
   const shop = request.nextUrl.searchParams.get('shop');
@@ -11,6 +11,14 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const authUrl = buildAuthUrl(shop);
-  return NextResponse.redirect(authUrl);
+  const { url, nonce } = buildAuthUrl(shop);
+  const response = NextResponse.redirect(url);
+  response.cookies.set(OAUTH_NONCE_COOKIE, nonce, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    maxAge: 600,
+    path: '/',
+  });
+  return response;
 }

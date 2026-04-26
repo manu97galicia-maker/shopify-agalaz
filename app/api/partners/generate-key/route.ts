@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { generateApiKey } from '@/lib/partners';
+import { requireShopAuth } from '@/lib/requireShopAuth';
 
 export async function POST(req: NextRequest) {
+  const auth = requireShopAuth(req);
+  if (!auth.ok) return auth.response;
+
   try {
-    const { partner_id } = await req.json();
-
-    if (!partner_id) {
-      return NextResponse.json({ error: 'partner_id is required' }, { status: 400 });
-    }
-
     const admin = createAdminClient();
 
     const { data: partner, error } = await admin
       .from('partners')
       .select('id, setup_paid, is_active, api_key_hash')
-      .eq('id', partner_id)
+      .eq('shop_domain', auth.shop)
       .single();
 
     if (error || !partner) {
@@ -32,13 +30,11 @@ export async function POST(req: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    // First key generation: activate account but no free credits
-    // (credits come from Stripe trial activation → 50 renders for 7 days)
     if (isFirstKey) {
       updateData.setup_paid = true;
     }
 
-    await admin.from('partners').update(updateData).eq('id', partner_id);
+    await admin.from('partners').update(updateData).eq('id', partner.id);
 
     return NextResponse.json({
       success: true,

@@ -226,7 +226,7 @@ export default function HomePage() {
                 icon: <CreditCard size={18} className="text-indigo-400" />,
                 title: 'Start your 7-day free trial',
                 time: '30 seconds',
-                desc: 'Open the Agalaz dashboard inside Shopify → click "Start free trial" → enter payment method in Stripe Checkout. 50 renders unlocked. Cancel anytime before day 7 for no charge.',
+                desc: 'Open the Agalaz dashboard inside Shopify → click "Start free trial" → approve the charge in Shopify Billing. 50 renders unlocked. Cancel anytime before day 7 for no charge.',
               },
               {
                 num: '4',

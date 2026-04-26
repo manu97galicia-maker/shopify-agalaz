@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseAdmin';
+import { requireShopAuth } from '@/lib/requireShopAuth';
 
 export async function GET(req: NextRequest) {
-  const shopDomain = req.nextUrl.searchParams.get('shop');
-  if (!shopDomain) {
-    return NextResponse.json({ error: 'shop parameter is required' }, { status: 400 });
-  }
+  const auth = requireShopAuth(req);
+  if (!auth.ok) return auth.response;
 
   const admin = createAdminClient();
   const { data: partner, error } = await admin
     .from('partners')
     .select('id, store_name, store_url, plan, setup_paid, is_active, credits_remaining, api_key_prefix, stripe_subscription_id, shopify_subscription_id, credits_monthly_limit, total_renders, trial_ends_at')
-    .eq('shop_domain', shopDomain)
+    .eq('shop_domain', auth.shop)
     .single();
 
   if (error || !partner) {

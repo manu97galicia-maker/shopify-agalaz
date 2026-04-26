@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { generateApiKey } from '@/lib/partners';
+import { requireShopAuth } from '@/lib/requireShopAuth';
 
-// Auto-setup a Shopify store as a partner when first opening the dashboard
+// Auto-setup endpoint for embedded merchants whose OAuth callback didn't
+// create a partner row (rare race condition). Requires a valid App Bridge
+// session token; the shop is derived from the token, never from the body.
 export async function POST(req: NextRequest) {
+  const auth = requireShopAuth(req);
+  if (!auth.ok) return auth.response;
+
+  const shop = auth.shop;
+
   try {
-    const { shop } = await req.json();
-
-    if (!shop || !shop.endsWith('.myshopify.com')) {
-      return NextResponse.json({ error: 'Invalid shop domain' }, { status: 400 });
-    }
-
     const admin = createAdminClient();
 
-    // Check if already exists
     const { data: existing } = await admin
       .from('partners')
       .select('id, api_key_hash, api_key_prefix, is_active, credits_remaining')
@@ -28,12 +29,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Generate API key
     const { raw, hash, prefix } = generateApiKey();
     const storeName = shop.replace('.myshopify.com', '');
 
     if (existing) {
-      // Update existing record with API key
       await admin.from('partners').update({
         api_key_hash: hash,
         api_key_prefix: prefix,
@@ -50,7 +49,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create new partner
     const { data: partner, error } = await admin
       .from('partners')
       .insert({

@@ -1,38 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabaseAdmin';
 import { triggerCatalogSync } from '@/lib/triggerCatalogSync';
+import { requireShopAuth } from '@/lib/requireShopAuth';
 
-const COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+const COOLDOWN_MS = 60 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
-  try {
-    const { partner_id, shop } = await req.json();
-    if (!partner_id) {
-      return NextResponse.json({ error: 'partner_id is required' }, { status: 400 });
-    }
-    if (!shop) {
-      return NextResponse.json({ error: 'shop is required' }, { status: 400 });
-    }
+  const auth = requireShopAuth(req);
+  if (!auth.ok) return auth.response;
 
+  try {
     const admin = createAdminClient();
     const { data: partner } = await admin
       .from('partners')
       .select('id, shop_domain, shopify_access_token, last_catalog_sync_at, plan')
-      .eq('id', partner_id)
+      .eq('shop_domain', auth.shop)
       .single();
 
     if (!partner?.shopify_access_token) {
       return NextResponse.json({ error: 'No Shopify token — reinstall the app' }, { status: 400 });
     }
 
-    // Prevent UUID probing — caller must know the shop domain too
-    if (partner.shop_domain !== shop) {
-      return NextResponse.json({ error: 'Shop mismatch' }, { status: 403 });
-    }
-
-    // Cooldown to prevent abuse — but waive it if the merchant still has
-    // zero products synced (first-time setup where the auto-sync ran too
-    // early, before the merchant added products).
     if (partner.last_catalog_sync_at) {
       const { count: productsCount } = await admin
         .from('products')
@@ -70,27 +58,35 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const partnerId = req.nextUrl.searchParams.get('partner_id');
-  if (!partnerId) {
-    return NextResponse.json({ error: 'partner_id is required' }, { status: 400 });
-  }
+  const auth = requireShopAuth(req);
+  if (!auth.ok) return auth.response;
 
   const admin = createAdminClient();
+  const { data: partner } = await admin
+    .from('partners')
+    .select('id')
+    .eq('shop_domain', auth.shop)
+    .single();
+
+  if (!partner) {
+    return NextResponse.json({ total: 0, classified: 0, last_synced: null });
+  }
+
   const { count: total } = await admin
     .from('products')
     .select('id', { count: 'exact', head: true })
-    .eq('partner_id', partnerId);
+    .eq('partner_id', partner.id);
 
   const { count: classified } = await admin
     .from('products')
     .select('id', { count: 'exact', head: true })
-    .eq('partner_id', partnerId)
+    .eq('partner_id', partner.id)
     .not('classified_at', 'is', null);
 
   const { data: latest } = await admin
     .from('products')
     .select('synced_at')
-    .eq('partner_id', partnerId)
+    .eq('partner_id', partner.id)
     .order('synced_at', { ascending: false })
     .limit(1)
     .maybeSingle();

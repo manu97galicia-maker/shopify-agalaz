@@ -68,10 +68,9 @@ export default function PrivacyPage() {
             Images sent via the paid API tier are not used to train models. Google may temporarily
             retain images for up to 30 days solely for abuse and safety monitoring, after which they
             are permanently deleted.</li>
-          <li><strong>Stripe</strong> — for merchant subscription billing and payment processing.
-            Stripe processes payment data per their own{' '}
-            <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">privacy policy</a>.
-            We do not store credit card numbers or payment details.</li>
+          <li><strong>Shopify Billing</strong> — all merchant subscription and one-time charges
+            are processed by Shopify under your existing Shopify merchant agreement. Agalaz never sees,
+            handles, or stores your payment details.</li>
           <li><strong>Supabase</strong> — our database provider (hosted in the EU), which stores
             merchant account data and product catalog information. No customer data is stored.</li>
           <li><strong>Vercel</strong> — our hosting provider, which processes API requests.

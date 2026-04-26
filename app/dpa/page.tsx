@@ -67,7 +67,8 @@ export default function DPAPage() {
           <li><strong>Customer photos</strong> — processed in memory only. NOT stored on Processor servers.
             Sent to the AI sub-processor (Google Gemini) for result generation and immediately discarded.</li>
           <li><strong>Merchant account data</strong> — email, shop domain, store name, Shopify access token
-            (encrypted), billing data (handled by Stripe).</li>
+            (encrypted). Billing data is processed by Shopify under your Shopify merchant agreement; the
+            Processor does not store payment details.</li>
           <li><strong>Product catalog metadata</strong> — product titles, descriptions, types, tags, images
             URLs, variant info (not customer data).</li>
         </ul>
@@ -134,9 +135,9 @@ export default function DPAPage() {
               <td>Global edge</td>
             </tr>
             <tr>
-              <td>Stripe Payments Europe</td>
-              <td>Billing and subscription management</td>
-              <td>EU / US</td>
+              <td>Shopify Inc.</td>
+              <td>Subscription billing and payment processing (via the Shopify Billing API)</td>
+              <td>EU / US / Canada</td>
             </tr>
           </tbody>
         </table>
@@ -148,7 +149,7 @@ export default function DPAPage() {
 
         <h2>9. International data transfers</h2>
         <p>
-          Where Personal Data is transferred outside the EU/UK (e.g., to Google or Stripe), such transfers
+          Where Personal Data is transferred outside the EU/UK (e.g., to Google or Shopify), such transfers
           are safeguarded by the EU Standard Contractual Clauses (SCCs) incorporated into the Sub-processors&apos;
           terms, and/or adequacy decisions where applicable.
         </p>
