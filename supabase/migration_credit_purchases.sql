@@ -11,3 +11,7 @@ create table if not exists partner_credit_purchases (
 
 create index if not exists partner_credit_purchases_partner_idx
   on partner_credit_purchases(partner_id);
+
+-- Deny-by-default for anon/authenticated keys. Server-side writes use the
+-- service_role key (via createAdminClient) which bypasses RLS.
+alter table partner_credit_purchases enable row level security;
