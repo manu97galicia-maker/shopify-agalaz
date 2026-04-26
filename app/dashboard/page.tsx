@@ -51,6 +51,23 @@ async function authFetch(input: string, init: RequestInit = {}): Promise<Respons
   return fetch(input, { ...init, headers });
 }
 
+// Top-level redirect from inside Shopify's embedded iframe.
+// `window.top.location.href = url` only works while user activation is fresh,
+// which is lost across awaits in click handlers. window.open(url, '_top') is
+// what App Bridge does internally and tolerates the activation gap.
+function topLevelRedirect(url: string) {
+  try {
+    if (window.open(url, '_top')) return;
+  } catch { /* fall through */ }
+  try {
+    if (window.top) {
+      window.top.location.href = url;
+      return;
+    }
+  } catch { /* fall through */ }
+  window.location.href = url;
+}
+
 // Extract shop from URL params, host param, or id_token
 function detectShop(): string {
   if (typeof window === 'undefined') return '';
@@ -203,13 +220,14 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: selectedPlan }),
       });
-      const data = await res.json();
-      if (data.url) {
-        window.top ? window.top.location.href = data.url : window.location.href = data.url;
-      } else {
-        setError(data.error || 'Failed to start checkout');
+      const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      if (res.ok && data.url) {
+        topLevelRedirect(data.url);
+        return;
       }
-    } catch {
+      setError(data.error || `Failed to start checkout (HTTP ${res.status})`);
+    } catch (e: any) {
+      console.error('[Agalaz] checkout error', e);
       setError('Something went wrong');
     }
     setIsSubmitting(false);
@@ -219,13 +237,14 @@ export default function DashboardPage() {
     if (!profile) return;
     try {
       const res = await authFetch('/api/partners/credits-purchase', { method: 'POST' });
-      const data = await res.json();
-      if (data.url) {
-        window.top ? window.top.location.href = data.url : window.location.href = data.url;
-      } else {
-        setError(data.error || 'Failed to start purchase');
+      const data = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      if (res.ok && data.url) {
+        topLevelRedirect(data.url);
+        return;
       }
-    } catch {
+      setError(data.error || `Failed to start purchase (HTTP ${res.status})`);
+    } catch (e: any) {
+      console.error('[Agalaz] credits purchase error', e);
       setError('Something went wrong');
     }
   }
