@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const admin = createAdminClient();
   const { data: partner, error } = await admin
     .from('partners')
-    .select('id, store_name, store_url, plan, setup_paid, is_active, credits_remaining, api_key_prefix, stripe_subscription_id, shopify_subscription_id, credits_monthly_limit, total_renders, trial_ends_at')
+    .select('id, store_name, store_url, plan, setup_paid, is_active, credits_remaining, api_key_prefix, shopify_subscription_id, credits_monthly_limit, total_renders, trial_ends_at')
     .eq('shop_domain', auth.shop)
     .single();
 
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
       total_renders: partner.total_renders,
       api_key_prefix: partner.api_key_prefix,
       has_api_key: partner.is_active && partner.api_key_prefix !== 'pending',
-      has_subscription: !!(partner.shopify_subscription_id || partner.stripe_subscription_id),
+      has_subscription: !!partner.shopify_subscription_id,
       trial_ends_at: partner.trial_ends_at || null,
     },
   });

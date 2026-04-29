@@ -286,9 +286,9 @@ export default function HomePage() {
           <p className="text-slate-400 text-sm text-center mb-12">No credit card required. Cancel anytime.</p>
           <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto">
             {[
-              { name: 'Free Trial', price: '€0', period: '/7 days', renders: '50 renders', desc: 'Payment method required. Cancel anytime before day 7.', cta: 'Start Free Trial', href: APP_INSTALL_URL },
-              { name: 'Starter', price: '€149', period: '/mo', renders: '200 renders/mo', desc: 'For boutiques & small stores', popular: true, cta: 'Get Started', href: APP_INSTALL_URL },
-              { name: 'Growth', price: '€499', period: '/mo', renders: '1,000 renders/mo', desc: 'For high-volume stores', cta: 'Get Started', href: APP_INSTALL_URL },
+              { name: 'Free Trial', price: '$0', period: '/7 days', renders: '50 renders', desc: 'Payment method required. Cancel anytime before day 7.', cta: 'Start Free Trial', href: APP_INSTALL_URL },
+              { name: 'Starter', price: '$149', period: '/mo', renders: '200 renders/mo', desc: 'For boutiques & small stores', popular: true, cta: 'Get Started', href: APP_INSTALL_URL },
+              { name: 'Growth', price: '$499', period: '/mo', renders: '1,000 renders/mo', desc: 'For high-volume stores', cta: 'Get Started', href: APP_INSTALL_URL },
             ].map((plan, i) => (
               <div key={i} className={`relative bg-white p-6 rounded-2xl border-2 flex flex-col ${plan.popular ? 'border-indigo-600 shadow-lg shadow-indigo-100' : 'border-slate-200'}`}>
                 {plan.popular && (

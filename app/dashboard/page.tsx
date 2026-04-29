@@ -6,7 +6,7 @@ import { Sparkles, Copy, Check, Zap, Shield, BarChart3, ExternalLink, ChevronDow
 import { OnboardingWizard } from './OnboardingWizard';
 
 const PLANS = [
-  { id: 'starter', name: 'Starter', price: 150, renders: 200, extra: '0.75', features: ['200 renders/month', 'Customizable widget'] },
+  { id: 'starter', name: 'Starter', price: 149, renders: 200, extra: '0.75', features: ['200 renders/month', 'Customizable widget'] },
   { id: 'growth', name: 'Growth', price: 499, renders: 1000, extra: '0.50', features: ['1,000 renders/month', 'Customizable widget'], popular: true },
 ];
 
@@ -322,21 +322,12 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center space-y-4 max-w-md px-6">
           <h1 className="font-serif text-2xl font-black text-slate-900">Agalaz Virtual Try-On</h1>
-          <p className="text-slate-400 text-sm">Please open this app from your Shopify admin panel.</p>
-          <div className="pt-4">
-            <input
-              type="text"
-              placeholder="your-store.myshopify.com"
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-center"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  const val = (e.target as HTMLInputElement).value.trim();
-                  if (val) setShop(val.includes('.myshopify.com') ? val : val + '.myshopify.com');
-                }
-              }}
-            />
-            <p className="text-[10px] text-slate-300 mt-2">Or enter your shop domain and press Enter</p>
-          </div>
+          <p className="text-slate-400 text-sm">
+            Open this app from your Shopify admin: <strong>Apps → Agalaz Virtual Try-On</strong>.
+          </p>
+          <p className="text-[11px] text-slate-300">
+            Don't have it installed yet? Find Agalaz Virtual Try-On in the Shopify App Store.
+          </p>
         </div>
       </div>
     );
@@ -589,7 +580,7 @@ export default function DashboardPage() {
               <div className="flex-1">
                 <p className="text-sm font-black text-slate-900">Free trial — {trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining</p>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  You have <strong>{profile.credits_remaining} renders</strong> included. After the trial, your Starter plan ({PLANS[0].price === 150 ? '149' : PLANS[0].price}€/month) activates automatically.
+                  You have <strong>{profile.credits_remaining} renders</strong> included. After the trial, your Starter plan (${PLANS[0].price}/month) activates automatically.
                 </p>
                 <p className="text-[10px] text-slate-400 mt-1">
                   Cancel anytime before {profile.trial_ends_at ? new Date(profile.trial_ends_at).toLocaleDateString() : ''} and you won't be charged.
@@ -610,7 +601,7 @@ export default function DashboardPage() {
             <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="font-bold text-slate-900">Starter plan</span>
-                <span className="font-black text-indigo-600">149€/month</span>
+                <span className="font-black text-indigo-600">$149/month</span>
               </div>
               <ul className="text-xs text-slate-600 space-y-1">
                 <li>&#10003; 200 renders/month</li>
@@ -619,7 +610,7 @@ export default function DashboardPage() {
                 <li>&#10003; Customizable widget</li>
               </ul>
               <div className="pt-1 border-t border-indigo-100">
-                <p className="text-[10px] text-slate-400">First 7 days free. After trial: 149€/month. Cancel anytime.</p>
+                <p className="text-[10px] text-slate-400">First 7 days free. After trial: $149/month. Cancel anytime.</p>
               </div>
             </div>
             {error && <p className="text-sm text-red-600 font-bold text-center">{error}</p>}
@@ -629,7 +620,7 @@ export default function DashboardPage() {
             </button>
             <button onClick={() => { setSelectedPlan('growth'); handleSubscribe(); }} disabled={isSubmitting}
               className="w-full py-3 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:border-indigo-300 transition-colors disabled:opacity-50">
-              {isSubmitting ? '...' : 'Or start with Growth (499€/month · 1,000 renders)'}
+              {isSubmitting ? '...' : 'Or start with Growth ($499/month · 1,000 renders)'}
             </button>
           </div>
         )}
@@ -652,7 +643,7 @@ export default function DashboardPage() {
                     <div className="absolute -top-2 right-3 px-2 py-0.5 bg-indigo-600 text-white text-[8px] font-black uppercase rounded-full">Popular</div>
                   )}
                   <p className="font-black text-slate-900">{plan.name}</p>
-                  <p className="text-xl font-black text-slate-900 mt-1">{plan.price === 150 ? '149' : '499'}€<span className="text-xs font-normal text-slate-400">/mo</span></p>
+                  <p className="text-xl font-black text-slate-900 mt-1">${plan.price}<span className="text-xs font-normal text-slate-400">/mo</span></p>
                   <p className="text-xs text-indigo-600 font-bold mt-1">{plan.renders} renders/mo</p>
                 </button>
               ))}
@@ -737,7 +728,7 @@ export default function DashboardPage() {
             <h2 className="font-bold text-slate-900">FAQ</h2>
           </div>
           {[
-            { q: 'How does the trial work?', a: '7-day free trial with 50 renders. Requires a payment method — if you don\'t cancel before day 7, the Starter plan (€149/mo, 200 renders/mo) activates automatically.' },
+            { q: 'How does the trial work?', a: '7-day free trial with 50 renders. Requires a payment method — if you don\'t cancel before day 7, the Starter plan ($149/mo, 200 renders/mo) activates automatically.' },
             { q: 'What can customers try on?', a: 'Clothing, glasses, jewelry, hats, shoes, bags — the AI detects the product type automatically.' },
             { q: 'Are customer photos stored?', a: 'No. Photos are processed in real-time and immediately discarded. Zero data retention.' },
             { q: 'How fast is rendering?', a: '10-30 seconds depending on image quality.' },

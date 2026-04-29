@@ -28,8 +28,8 @@ export default function TermsPage() {
           <li><strong>Free trial</strong>: 7 days with 50 renders. Requires a valid payment method.
             Available once per store. If not cancelled before the trial ends, the Starter plan
             activates automatically.</li>
-          <li><strong>Starter</strong>: 149€/month — 200 renders/month.</li>
-          <li><strong>Growth</strong>: 499€/month — 1,000 renders/month.</li>
+          <li><strong>Starter</strong>: $149/month — 200 renders/month.</li>
+          <li><strong>Growth</strong>: $499/month — 1,000 renders/month.</li>
           <li>Billing is handled by Shopify via the Shopify Billing API. Subscriptions renew every 30 days
             on the activation date and appear on your Shopify invoice.</li>
           <li>Unused credits do not roll over to the next month.</li>

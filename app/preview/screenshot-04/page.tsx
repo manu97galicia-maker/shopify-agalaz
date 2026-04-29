@@ -29,7 +29,7 @@ export default function Screenshot04() {
             Start free. Scale as you grow.
           </h1>
           <p style={{ fontSize: '22px', color: '#64748B', lineHeight: 1.5 }}>
-            7-day free trial with 50 renders. Cancel anytime before day 7 for €0.
+            7-day free trial with 50 renders. Cancel anytime before day 7 for $0.
           </p>
         </div>
 
@@ -37,7 +37,7 @@ export default function Screenshot04() {
           {[
             {
               name: 'Free Trial',
-              price: '€0',
+              price: '$0',
               period: '/ 7 days',
               renders: '50 renders',
               desc: 'Payment method required. Cancel anytime before day 7.',
@@ -46,7 +46,7 @@ export default function Screenshot04() {
             },
             {
               name: 'Starter',
-              price: '€149',
+              price: '$149',
               period: '/ month',
               renders: '200 renders / month',
               desc: 'Boutiques and small stores.',
@@ -55,7 +55,7 @@ export default function Screenshot04() {
             },
             {
               name: 'Growth',
-              price: '€499',
+              price: '$499',
               period: '/ month',
               renders: '1,000 renders / month',
               desc: 'High-volume stores.',

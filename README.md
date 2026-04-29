@@ -7,7 +7,7 @@ AI-powered virtual try-on for Shopify stores. Customers try on clothing, glasses
 - **Framework**: Next.js 14 (App Router)
 - **AI**: Google Gemini (image generation)
 - **Database**: Supabase (PostgreSQL)
-- **Billing**: Stripe
+- **Billing**: Shopify Billing API (managed via the embedded dashboard)
 - **Deployment**: Vercel
 - **Shopify**: Theme App Extension + OAuth
 
@@ -16,9 +16,8 @@ AI-powered virtual try-on for Shopify stores. Customers try on clothing, glasses
 1. Create app in [Shopify Partners](https://partners.shopify.com)
 2. Create a [Supabase](https://supabase.com) project and run `supabase/migration.sql`
 3. Get a [Gemini API key](https://ai.google.dev/)
-4. Set up [Stripe](https://stripe.com) with monthly price IDs
-5. Copy `.env.example` to `.env` and fill in all values
-6. `npm install && npm run dev`
+4. Copy `.env.example` to `.env` and fill in all values
+5. `npm install && npm run dev`
 
 ## Structure
 
@@ -31,8 +30,8 @@ app/
 │   ├── auth/                   # Shopify OAuth flow
 │   ├── v1/tryon/               # Virtual try-on API (Gemini AI)
 │   ├── v1/image-proxy/         # Image proxy for CORS
-│   ├── partners/               # Partner registration, API keys, profile
-│   ├── stripe/webhook/         # Stripe payment webhooks
+│   ├── partners/               # Partner registration, API keys, profile, Shopify Billing
+│   ├── webhooks/               # Shopify webhooks (GDPR, app/uninstalled, app_subscriptions/update, products/*)
 │   └── health/                 # Health check
 lib/
 ├── supabaseAdmin.ts            # Supabase admin client
@@ -51,15 +50,15 @@ public/
 1. Merchant installs app → OAuth → auto-registered with 5 free renders
 2. Theme extension adds "Try it on with AI" button on product pages
 3. Customer clicks → iframe opens → uploads photo → AI generates try-on
-4. Credits deducted per render, Stripe billing for paid plans
+4. Credits deducted per render, Shopify Billing API for paid plans (subscriptions + credit packs)
 
 ## Plans
 
 | Plan | Price | Renders/month |
 |------|-------|---------------|
-| Free Trial | €0 | 5 |
-| Starter | €149/mo | 200 |
-| Growth | €499/mo | 1,000 |
+| Free Trial | $0 | 50 |
+| Starter | $149/mo | 200 |
+| Growth | $499/mo | 1,000 |
 
 ## Supported Items
 
